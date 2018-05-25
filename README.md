@@ -10,9 +10,9 @@ and coding the "update_binary".
 
 
 ## Features
-- [x] Automated Install
-	* extract and install files inside the system zip folder
-	* set permissions
+- [x] Automated Install System Files
+	* [x] extract and install files inside the system zip folder
+	* [x] set proper permissions
 - [x] Pre-Space Calculation Checking
 - [x] Addon Script Generation
 - [x] Script Configurable Settings
