@@ -33,6 +33,6 @@ and coding the "update_binary".
 
 <br /> <br />
 **CodRLabworks** <br />
-**CodR C.A** <br />
+**CodR C.A | Christian Arvin** <br/>
 **Contact:** <br />
 *naitsirhc.uriel@gmail.com* <br />
