@@ -28,11 +28,12 @@ and coding the "update_binary".
 	* **installer.sh** - put your custom script here, <br />
 	**Note. Main installer.sh will only load the configs and library then run this script if it exist inside the install folder**
 
-
+## External Sources
+This repo uses busybox binaries from busybox.net, maintained by [Denys Vlasenko](mailto:vda.linux@googlemail.com) under the [GNU GPLv2](https://busybox.net/license.html).<br> 
+Check the [source](https://git.busybox.net/busybox).
 
 
 <br /> <br />
 **CodRLabworks** <br />
 **CodR C.A | Christian Arvin** <br/>
-**Contact:** <br />
-*naitsirhc.uriel@gmail.com* <br />
+**Contact: [Me](mailto:naitsirhc.uriel@gmail.com)**<br />
