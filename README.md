@@ -17,7 +17,7 @@ and coding the "update_binary".
 - [x] Addon Script Generation
 - [x] Script Configurable Settings
 - [x] Custom User script
-- [ ] Revert Install
+- [ ] Failsafe Revert Install
 
 ## Usage
 
