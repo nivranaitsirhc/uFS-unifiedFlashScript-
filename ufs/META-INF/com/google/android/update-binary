@@ -49,20 +49,30 @@ bb=$BINARIES/busybox-arm
 # _______________________________________________________________________________________________________
 #
 
-case "$(uname -m)" in
-  *86*)  export BINARCH="x86";;  # e.g. Zenfone is i686
-  *ar*)  export BINARCH="arm";;  # i.e. armv7l and aarch64
-  *mip*) export BINARCH="mips";;
+case "$(uname -m)" in 
+	*mip*)
+		{(getprop ro.product.cpu.abilist | grep 64) && \
+		export BINARCH="mips64";} || \
+		export BINARCH="mips"
+		;;
+	*ar*)
+		{(getprop ro.product.cpu.abilist | grep v8) && \
+		export BINARCH="armv8";} || \
+		{(getprop ro.product.cpu.abilist | grep v7) && \
+		export BINARCH="armv7";} || \
+		export BINARCH="arm"
+		;;
+	*86*|*64)
+		export BINARCH="x86_64"
+		;;
 esac
+
 eval bb="$BINARIES/busybox-$BINARCH"
 eval l="$BINARIES"
+
 # Functions
 # _______________________________________________________________________________________________________
 #
-logg(){
-	read IN
-	ui_print "$IN"
-}
 
 ui_print() {
 	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
@@ -84,38 +94,41 @@ if [ -e $COREDIR ];then
 fi
 # unzip core
 unzip -o "$ZIP" "core/*" -d "/tmp"
-# chmod binaries
-for bin in  busybox xzdec zip; do
-	install -d "$BINARIES"
-	chmod +x "$BINARIES/$bin-$BINARCH"
-	if [ "$bin" != "busybox" ];then
-	  if ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin"; then
-		  # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
-		  if ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" ; then
-			ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
-			ui_print "Please use TWRP as recovery instead"
-			exit 1
-		  fi
-	  fi
-	fi
-done
+
+install -d "$BINARIES"
 # Main
 # _______________________________________________________________________________________________________
 #
-if [ -e "$bb" ]; then
+
+# chmod binaries
+for bin in  busybox xzdec zip; do
+	chmod +x "$BINARIES/$bin-$BINARCH"
+	[[ "$bin" != "busybox" && -e "$BINARIES/$bin-$BINARCH" ]] && {
+	  ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin" && {
+		  # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
+		  ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" && {
+			ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
+			ui_print "Please use TWRP as recovery instead"
+			exit 1
+		  }
+	  }
+	}
+done
+
+[ -e "$bb" ] && {
   for i in $($bb --list); do
-    if ! ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -f "$bb" "$BINARIES/$i" ; then
+    ! ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -f "$bb" "$BINARIES/$i" && {
       # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
-      if ! echo "#!$bb" > "$BINARIES/$i" || ! chmod +x "$BINARIES/$i" ; then
+      ! echo "#!$bb" > "$BINARIES/$i" || ! chmod +x "$BINARIES/$i" && {
         ui_print "ERROR: Failed to set-up pre-bundled busybox"
         ui_print "Please use TWRP as recovery instead"
         exit 10
-      fi
-    fi
+      }
+    }
   done
   PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@"
   exit "$?"
-else
+} || {
 	ui_print "ERROR: Unable to load pre-bundled busybox"
-  exit 12
-fi
+	exit 12
+}

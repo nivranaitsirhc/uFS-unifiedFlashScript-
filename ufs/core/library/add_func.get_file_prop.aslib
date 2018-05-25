@@ -1,0 +1,19 @@
+#!/sbin/sh
+#
+# aslib library
+#
+
+##### ASLIB.ADD.GET_FILE_PROP
+get_file_prop() {
+	if [ -f "$1" ];then
+		prop_f=$1
+		prop_v=$2
+	elif [ -f "$2" ];then
+		prop_f=$2
+		prop_v=$1
+	else
+		$LT3 "E: ASLIB get_file_prop: No valid file"
+		return 1
+	fi
+	grep -m1 "^$prop_v=" "$prop_f" | cut -d= -f2
+}
