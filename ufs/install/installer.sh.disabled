@@ -16,6 +16,7 @@
 # !     * user defined configs                           !
 # !     * and libraries                                  !
 # !     * then load install/installer.sh                 !
+# !     * install/install.sh will be ignored             !
 # ! 2.) all binaries and arguments passed from,          !
 # !     update-binary will also be passed to this scrpt. !
 # ! 3.) Automated Functions Defined inside the core      !
