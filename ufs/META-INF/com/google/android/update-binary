@@ -1,0 +1,121 @@
+#!/sbin/sh
+#
+#	General META-INF/update-binary template
+#	
+#	CodRLabworks
+#	CodRCA: Christian Arvin Catajoy Cabo
+#	      : C.A.META-INF_update-binary
+#
+#	Description:
+#
+#	 This is a general template for update.zip designed by C.A. for his scripts.
+#	The aim of this script is to have a template for an update zip. eliminating the
+#	need to always modify the update-binary. 1.)If you are going to use my script please
+#	do not remove this header. 2.)You can use it freely as much as you want. 3.)You are
+#	allowed to modify this script. 4.)If modification has caused the whole script
+#	to be unrecognizingly different from my original script, just reference me and this
+#	script on the header.
+#
+#	Dependents
+#		1.) root path must include a core folder.
+#		2.) core folder must have the installer.sh script.
+#		3.) installer.sh script is where your mainscript would be.
+#
+#	Global Folder and File Structures
+#	
+#	META-INF/com/google/android/update-binary	- this script
+#	core/installer.sh							- your script, it will be called by this script
+#	core/library/*								- library files.
+#
+#	Global Variables
+#		This variables are passed to the installer.sh
+#	ZIP		-This is the zip filename location where this script was called.
+#	OUTFD	-The out FD that was pass to this script by the recovery env.
+#	COREDIR	-The location of extracted core files from the zip
+#	LIBS	-The location of library
+#
+
+# Global Variables
+#------------------------------------------------------------------------#
+export OUTFD=$2
+export ZIP=$3
+export COREDIR=/tmp/core
+export BINARIES=/tmp/core/bin
+export LIBS=/tmp/core/library
+export INSTALLER=/tmp/core/installer.sh
+export SYSTEM=/system
+bb=$BINARIES/busybox-arm
+# Pre-Initialization
+# _______________________________________________________________________________________________________
+#
+
+case "$(uname -m)" in
+  *86*)  export BINARCH="x86";;  # e.g. Zenfone is i686
+  *ar*)  export BINARCH="arm";;  # i.e. armv7l and aarch64
+  *mip*) export BINARCH="mips";;
+esac
+eval bb="$BINARIES/busybox-$BINARCH"
+eval l="$BINARIES"
+# Functions
+# _______________________________________________________________________________________________________
+#
+logg(){
+	read IN
+	ui_print "$IN"
+}
+
+ui_print() {
+	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
+	echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
+}
+
+# Post-Initialization
+# _______________________________________________________________________________________________________
+#
+setenforce 0
+if [ ! -f "/sbin/unzip" ]; then
+	# recovery is unstable
+	ui_print "- BAD RECOVERY DETECTED, NO UNZIP, ABORTING.."
+	exit 1
+fi
+
+if [ -e $COREDIR ];then
+	rm -rf $COREDIR
+fi
+# unzip core
+unzip -o "$ZIP" "core/*" -d "/tmp"
+# chmod binaries
+for bin in  busybox xzdec zip; do
+	install -d "$BINARIES"
+	chmod +x "$BINARIES/$bin-$BINARCH"
+	if [ "$bin" != "busybox" ];then
+	  if ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin"; then
+		  # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
+		  if ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" ; then
+			ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
+			ui_print "Please use TWRP as recovery instead"
+			exit 1
+		  fi
+	  fi
+	fi
+done
+# Main
+# _______________________________________________________________________________________________________
+#
+if [ -e "$bb" ]; then
+  for i in $($bb --list); do
+    if ! ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -sf "$bb" "$BINARIES/$i" && ! $bb ln -f "$bb" "$BINARIES/$i" ; then
+      # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
+      if ! echo "#!$bb" > "$BINARIES/$i" || ! chmod +x "$BINARIES/$i" ; then
+        ui_print "ERROR: Failed to set-up pre-bundled busybox"
+        ui_print "Please use TWRP as recovery instead"
+        exit 10
+      fi
+    fi
+  done
+  PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@"
+  exit "$?"
+else
+	ui_print "ERROR: Unable to load pre-bundled busybox"
+  exit 12
+fi
