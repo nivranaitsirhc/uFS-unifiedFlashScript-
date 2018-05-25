@@ -23,9 +23,9 @@ and coding the "update_binary".
 
  1. Anything inside the system folder will be automatically installed
  2. User Configuration **`install/*`**
-	* **config**       - modify installer script behavior *refer to core/config/ufconfig* for the right settings
-	* **install.sh**   - custom user script that will be loaded at runtime.
-	* **installer.sh** - put your custom script here, <br />
+	* **`config`**       - modify installer script behavior *refer to core/config/`ufsconfig`* for the right settings
+	* **`install.sh`**   - custom user script that will be loaded at runtime.
+	* **`installer.sh`** - write your custom script here, <br />
 	**Note. Main installer.sh will only load the configs and library then run this script if it exist inside the install folder**
 
 ## External Sources
