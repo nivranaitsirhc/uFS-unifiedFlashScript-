@@ -40,18 +40,16 @@ cold_log() {
 	printf "$1\n"
 }
 
-alLog(){
-	cold_log "$1"
-}
-
 cold_log=cold_log
+[ -z "$TMP_LOG" ] && TMP_LOG="TMP_LOG INIT BY INSTALLER.SH"
+
 
 # placeholder functions
-install_init(){ $cold_log "I: place holder, install.sh was not loaded!"; return 0;}
+install_init(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
-install_main(){ $cold_log "I: place holder, install.sh was not loaded!"; return 0;}
+install_main(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
-install_post(){ $cold_log "I: place holder, install.sh was not loaded!"; return 0;}
+install_post(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
 abort () { ui_print "$1";exit 1; }
 
@@ -59,10 +57,10 @@ abort () { ui_print "$1";exit 1; }
 # ___________________________________________________________________________________________________________ <- 110 char
 #
 
-$cold_log "I: unified Flash Script - ver: $ver"
+$cold_log "I: INSTALLER.SH: unified Flash Script - ver: $ver"
 
 # PRINT ESSENTIAL DEF
-$cold_log "I: listing update-binary variables
+$cold_log "I: INSTALLER.SH: listing update-binary variables
 COREDIR   -> $COREDIR
 BINARIES  -> $BINARIES
 LIBS      -> $LIBS
@@ -94,56 +92,38 @@ ERR=0
 
 ##### PRE-INIT load aslib script and other configs
 # ------------------------------------------------------------------- <- 70 char
-$cold_log "I: LOADING aslib"
 ASLIB=$LIBS/aslib
-[ -e "$ASLIB" ] && {
-	(eval . $ASLIB) && . $ASLIB || { ui_print "E: ERROR $E_ANL: aslib is not loadable!"; abort $E_ANL; }
-} || {
-	ui_print "E: ERROR LOADING ASLIB"
-	exit 1
+$cold_log "I: INSTALLER.SH: LOADING $ASLIB"
+(eval . $ASLIB) && \
+. $ASLIB || {
+	ui_print "E: ERROR $E_ANL: aslib is not loadable!!"
+	abort $E_ANL
 }
 
-# LOAD CONFIG/ERR_CODE
+ui_print "$E_ANL"
+
+# LOAD UFS CONFIGS
 ER_CODE=$COREDIR/config/er_code
-[ -e $ER_CODE ] && {
-	$cold_log "I: LOADING $COREDIR/config/er_code"
-	(eval . $ER_CODE) && eval . $ER_CODE || $cold_log "W: INTEGRITY ERROR: FAILED TO LOAD er_code"
-} || {
-	ui_print "INTEGRITY ERROR: FAILED TO LOAD er_code"
-	exit 255
-}
-
-# LOAD CONFIG/UFSCONFIG
-$cold_log "I: LOADING $COREDIR/config/ufsconfig"
 UFSCONFIG=$COREDIR/config/ufsconfig
-[ -e $UFSCONFIG ] & {
-	(eval . $UFSCONFIG) && . $UFSCONFIG || $cold_log "W: INTEGRITY ERROR: FAILED TO LOAD ufsconfig"
-} || {
-	ui_print "INTEGRITY ERROR: MISSING ufsconfig"
-	exit 254
-}
+for config in $ER_CODE $UFSCONFIG; do
+	$cold_log "I: INSTALLER.SH: LOADING $config"
+	(eval . $config) && \
+	. $config  || \
+	$cold_log "E: INSTALLER.SH: INTEGRITY UNABLE TO LOAD"
+done
 
-# LOAD USER CONFIG
-# unzip install
-( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) || $cold_log "E: FAILED TO UNZIP install"
-
-# LOAD USER CONFIG
-$cold_log "I: LOADING user config"
+# LOAD USER CONFIGS
 USERCONFIG=$COREDIR/install/config 
-[ -e $USERCONFIG ] && {
-	(eval . $USERCONFIG) && . $USERCONFIG || $cold_log "W: FAILED TO LOAD user config"
-} || {
-	$cold_log "W: user config does not exist!"
-}
+USER_INSTALLSH=$COREDIR/install/install.sh 
+( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && \
+for config in $USERCONFIG $USER_INSTALLSH; do
+	$cold_log "I: INSTALLER.SH: LOADING $config"
+	(eval . $config) && \
+	. $config  || \
+	$cold_log "E: INSTALLER.SH: INTEGRITY UNABLE TO LOAD"
+done || \
+cold_log "W: INSTALLER.SH: UNABLE TO UNZIP USER CONFIGS"
 
-# LOAD USER INSTALL
-$cold_log "I: LOADING user install.sh"
-USER_INSTALLSH=$COREDIR/install/install.sh
-[ -e $USER_INSTALLSH ] && {
-	(eval . $USER_INSTALLSH) && . $USER_INSTALLSH || $cold_log "W: FAILED TO LOAD user install.sh"
-} || {
-	$cold_log "W: user install.sh does not exist!"
-}
 
 # SETUP ASLIB
 alLSet type 	$aslib_log_type        # FLASH TYPE
@@ -157,9 +137,10 @@ loc_of_aslib=$ASLIB
 def_config_check || ui_print "W: Misconfigs Detetected! check logs"
 
 
-# TURN-OVER TO USER INSTALLER.SH IF PRESENT IN INSTALL FOLDER
+# TURN-OVER TO USER INSTALLER.SH: IF PRESENT IN INSTALL FOLDER
 USER_INSTALLERSH=$COREDIR/install/installer.sh
 [ -e $USER_INSTALLERSH ] && {
+	$cold_log "I: INSTALLER.SH: DETECTED USER INSTALLER.SH, HANDING OVER.."
 	$BINARIES/ash  $USER_INSTALLERSH "$@" && \
 	exit "$?"
 }
@@ -169,15 +150,15 @@ USER_INSTALLERSH=$COREDIR/install/installer.sh
 #############################
 # LOAD INSTALL_INIT			#
 #############################
-alLog "I: RUNNING install_init"
-install_init || alLog "E: install_init exited with error $?"
+$cold_log "I: INSTALLER.SH: RUNNING install_init"
+install_init || $cold_log "E: INSTALLER.SH: install_init exited with error $?"
 
 # print header message
 # ----------------------------------------------- <- 50 char
 #
 is_enabled print_header_enabled && {
 	print_header;
-} || alLog "I: print_header disabled"
+} || $cold_log "I: INSTALLER.SH: print_header disabled"
 
 
 # MOUNT USER SELECTED MOUNTPOINTS
@@ -187,7 +168,7 @@ is_enabled print_header_enabled && {
 	for MOUNT in $mountpoints; do
 		remount_mountpoint /$MOUNT rw
 	done
-} || alLog "I: No defined mountpoints in user config"
+} || $cold_log "I: INSTALLER.SH: No defined mountpoints in user config"
 
 ##### PRE-INIT ASLIB VERSION
 # ------------------------------------------------------------------- <- 70 char
@@ -244,7 +225,7 @@ cur_android_version=$(get_prop ro.build.version.sdk);	# GET DEVICE SDK
 				abort $E_SDM
 			fi
 		;;
-		*) alLog "W: Unknown req_force value $req_force"
+		*) $cold_log "W: INSTALLER.SH: Unknown req_force value $req_force"
 		;;
 	esac
 }
@@ -278,13 +259,13 @@ is_enabled extract_system && {
 
 set_progress 0.25
 is_enabled extract_folder && {
-	alLog "I: extracting user folders.."
+	$cold_log "I: INSTALLER.SH: extracting user folders.."
 	[ ! -z "$user_folders" ] && {
 		for FOLDERS in $user_folders; do
-			alLog "I: extracting -> $FOLDER"
+			$cold_log "I: INSTALLER.SH: extracting -> $FOLDER"
 			extract_zip "$ZIP" "$FOLDER/*" "$SOURCEFS"
 		done
-	} || alLog "W: no defined user folders"
+	} || $cold_log "W: INSTALLER.SH: no defined user folders"
 }
 
 
@@ -308,27 +289,27 @@ is_enabled calculatespace && {
 	wipe_size=0;tmp_size=0;install_size=0;wipe_file_count=0;
 
 
-	alLog "I: Calculating system INSTALL_SIZE"
+	$cold_log "I: INSTALLER.SH: Calculating system INSTALL_SIZE"
 	install_size=$(du -ck $SOURCESYS | tail -n 1 | awk '{ print $1 }')
 
-	alLog "I: Calculating system WIPE_SIZE"
+	$cold_log "I: INSTALLER.SH: Calculating system WIPE_SIZE"
 	for TARGET in $wipe_list; do
 		[ -e /system/$TARGET ] && {
 			tmp_size=$(du -ck /system/$TARGET | tail -n 1 | awk '{ print $1 }')
 			wipe_size=$(($tmp_size+$wipe_size))
 			wipe_file_count=$((++wipe_file_count))
-			alLog "D: SIZE:$(printf "%-8s %s\n" $tmp_size "<- /system/$TARGET")"
+			$cold_log "D: INSTALLER.SH: SIZE:$(printf "%-8s %s\n" $tmp_size "<- /system/$TARGET")"
 		}
 	done
 
-	alLog "I: Total system install size -> $install_size"
-	alLog "I: Total system wipe size    -> $wipe_size"
-	alLog "I: Total system free size    -> $pc_free_sys"
+	$cold_log "I: INSTALLER.SH: Total system install size -> $install_size"
+	$cold_log "I: INSTALLER.SH: Total system wipe size    -> $wipe_size"
+	$cold_log "I: INSTALLER.SH: Total system free size    -> $pc_free_sys"
 
 	[ "$install_size" -gt "$(($pc_free_sys + $wipe_size))" ] && {
-		ui_print "E: Install size is to large for free system space."
+		ui_print "E: INSTALLER.SH: Install size is to large for free system space."
 		exit 1
-	} || alLog "I: Great! system has enough space for installation."
+	} || $cold_log "I: INSTALLER.SH: Great! system has enough space for installation."
 }
 
 # ##########################################################################################
@@ -373,8 +354,8 @@ set_progress 0.69
 #############################
 # LOAD INSTALL_MAIN			#
 #############################
-alLog "I: RUNNING install_main"
-install_main || alLog "E: install_main exited with error $?"
+$cold_log "I: INSTALLER.SH: RUNNING install_main"
+install_main || $cold_log "E: INSTALLER.SH: install_main exited with error $?"
 
 
 # ##########################################################################################
@@ -400,10 +381,10 @@ set_progress 0.80
 #
 ( is_enabled extract_system || is_enabled extract_folder ) && {
 	ui_print " - Cleaning up"
-	rm -rf "$SOURCESYS" || alLog "W: Errors were found during $SOURCESYS cleaning $?"
+	rm -rf "$SOURCESYS" || $cold_log "W: INSTALLER.SH: Errors were found during $SOURCESYS cleaning $?"
 	[ -e "$SOURCESYS" ] && {
-		alLog "W: Failed to remove $SOURCESYS"
-		alLog "I: Manually remove it on reboot"
+		$cold_log "W: INSTALLER.SH: Failed to remove $SOURCESYS"
+		$cold_log "I: INSTALLER.SH: Manually remove it on reboot"
 	}
 }
 
@@ -412,7 +393,7 @@ set_progress 0.94
 # ----------------------------------------------- <- 50 char
 is_mounted /system && {
 	ui_print " - Un-mounting system"
-	umount /system || alLog "W: Errors were found during system unmount $?"
+	umount /system || $cold_log "W: INSTALLER.SH: Errors were found during system unmount $?"
 }
 set_progress 1.0
 # DONE
@@ -428,8 +409,8 @@ sleep 3
 #############################
 # LOAD INSTALL_POST			#
 #############################
-alLog "I: RUNNING install_post"
-install_post || alLog "W: install_post exited with error $?"
+$cold_log "I: INSTALLER.SH: RUNNING install_post"
+install_post || $cold_log "W: INSTALLER.SH: install_post exited with error $?"
 
 
 # FLUSH COLD LOGS

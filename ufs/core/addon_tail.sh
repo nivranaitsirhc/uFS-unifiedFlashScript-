@@ -233,17 +233,9 @@ OUTFD=`ps | grep -v grep | grep -oE "update(.*)" | cut -d" " -f3`
 
 # CREATE THE DIRECTORY OTA LOG
 # by uniFlashScript standard..
-[ ! -e /sdcard/logs ] && {
-	file_log "I: $addon_name: creating logs directory"
-	mkdir /sdcard/logs
-}
-[ ! -e /sdcard/logs/ufs ] && {
-	file_log "I: $addon_name: creating ufs directory"
-	mkdir /sdcard/logs/ufs
-}
 [ ! -e /sdcard/logs/ufs/ota ] && {
 	file_log "I: $addon_name: creating ota directory"
-	mkdir /sdcard/logs/ufs/ota
+	install -d /sdcard/logs/ufs/ota
 }
 
 # OVIRRIDE C DEF. AND REDIRECT TO SDCARD
