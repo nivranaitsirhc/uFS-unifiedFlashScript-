@@ -45,6 +45,34 @@ export LIBS=/tmp/core/library
 export INSTALLER=/tmp/core/installer.sh
 export SYSTEM=/system
 bb=$BINARIES/busybox-arm
+
+# Functions
+# _______________________________________________________________________________________________________
+#
+
+ui_print() {
+	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
+	echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
+}
+
+cold_log() {
+	TMP_LOG="${TMP_LOG}"$'\n'"COLD LOG $1"
+	printf "$1\n"
+}
+
+abort() {
+	[ "$1" != "0" ] && {
+		install -d /sdcard/logs/ufs
+		ublogs=/sdcard/logs/ufs/ub_recovery.log
+		ui_print "I: UPDATE-BINARY: flushing cold_logs to $ublogs"
+		cat /tmp/recovery.log > $ublogs
+	}
+	exit $1
+}
+
+export cold_log=cold_log
+[ -z "$TMP_LOG" ] && export TMP_LOG="TMP_LOG INIT BY UPDATE-BINARY"
+
 # Pre-Initialization
 # _______________________________________________________________________________________________________
 #
@@ -67,18 +95,13 @@ case "$(uname -m)" in
 		;;
 esac
 
+ufsBIN="busybox zip lzmadec xzdec"
+
 eval bb="$BINARIES/busybox-$BINARCH"
 eval l="$BINARIES"
 
-# Functions
-# _______________________________________________________________________________________________________
-#
-
-ui_print() {
-	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
-	echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
-}
-
+ $cold_log "I: UPDATE-BINARY: BINARCH is $BINARCH"
+ $cold_log "I: UPDATE-BINARY: Busybox set to $bb"
 # Post-Initialization
 # _______________________________________________________________________________________________________
 #
@@ -101,17 +124,20 @@ install -d "$BINARIES"
 #
 
 # chmod binaries
-for bin in  busybox xzdec zip; do
-	chmod +x "$BINARIES/$bin-$BINARCH"
-	[[ "$bin" != "busybox" && -e "$BINARIES/$bin-$BINARCH" ]] && {
-	  ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin" && {
-		  # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
-		  ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" && {
-			ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
-			ui_print "Please use TWRP as recovery instead"
-			exit 1
+for bin in $ufsBIN; do
+	[ ! -e "$BINARIES/$bin-$BINARCH" ] && \
+	cold_log "E: UPDATE-BINARY: $bin-$BINARCH does not exist, maybe not supported yet by your arch." || {
+		chmod +x "$BINARIES/$bin-$BINARCH"
+		[[ "$bin" != "busybox" && -e "$BINARIES/$bin-$BINARCH" ]] && {
+		  ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin" && {
+			  # create script wrapper if symlinking and hardlinking failed because of restrictive selinux policy
+			  ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" && {
+				ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
+				ui_print "Please use TWRP as recovery instead"
+				abort 1
+			  }
 		  }
-	  }
+		}
 	}
 done
 
@@ -122,13 +148,13 @@ done
       ! echo "#!$bb" > "$BINARIES/$i" || ! chmod +x "$BINARIES/$i" && {
         ui_print "ERROR: Failed to set-up pre-bundled busybox"
         ui_print "Please use TWRP as recovery instead"
-        exit 10
+        abort 10
       }
     }
   done
   PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@"
-  exit "$?"
+  abort "$?"
 } || {
 	ui_print "ERROR: Unable to load pre-bundled busybox"
-	exit 12
+	abort 12
 }
