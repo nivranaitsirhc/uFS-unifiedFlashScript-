@@ -60,14 +60,20 @@ cold_log() {
 	printf "$1\n"
 }
 
-abort() {
+exit_() {
 	[ "$1" != "0" ] && {
 		install -d /sdcard/logs/ufs
 		ublogs=/sdcard/logs/ufs/ub_recovery.log
 		ui_print "I: UPDATE-BINARY: flushing cold_logs to $ublogs"
 		cat /tmp/recovery.log > $ublogs
 	}
+	kill_tail_recovery;
 	exit $1
+}
+
+kill_tail_recovery(){
+	kill $(ps | grep "/tmp/recovery.log" | grep "tail -f" | awk '{ print $1 }') || \
+	ui_print "Error. Unable to kill tail recovery, Manually Reboot the device."
 }
 
 export cold_log=cold_log
@@ -76,6 +82,10 @@ export cold_log=cold_log
 # Pre-Initialization
 # _______________________________________________________________________________________________________
 #
+
+devlogs=/sdcard/logs/devlogs
+[ ! -e $devlogs ] && install $devlogs
+(sleep 2;printf $'\n\n\n'"BEGIN RECOVERY TAIL LOGS"$'\n\n';tail -f /tmp/recovery.log >> $devlogs/recovery.log) &
 
 case "$(uname -m)" in 
 	*mip*)
@@ -134,7 +144,7 @@ for bin in $ufsBIN; do
 			  ! echo "$BINARIES/$bin-$BINARCH" > "$BINARIES/$bin" || ! chmod +x "$BINARIES/$bin" && {
 				ui_print "ERROR 10: Failed to set-up pre-bundled $bin "
 				ui_print "Please use TWRP as recovery instead"
-				abort 1
+				exit_ 1
 			  }
 		  }
 		}
@@ -148,13 +158,13 @@ done
       ! echo "#!$bb" > "$BINARIES/$i" || ! chmod +x "$BINARIES/$i" && {
         ui_print "ERROR: Failed to set-up pre-bundled busybox"
         ui_print "Please use TWRP as recovery instead"
-        abort 10
+        exit_ 10
       }
     }
   done
-  PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@" || abort "$?"
-  exit $?
+  PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@"
+  exit_ $?
 } || {
 	ui_print "ERROR: Unable to load pre-bundled busybox"
-	abort 12
+	exit_ 12
 }
