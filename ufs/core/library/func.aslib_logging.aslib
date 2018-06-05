@@ -15,6 +15,7 @@ alLInit() {
 	! is_mounted /sdcard rw && \
 	remount_mountpoint /sdcard rw
 	
+
 	# create log directory
 	[ ! -z "$aslib_log_type" ] && {
 		case $aslib_log_type in
@@ -181,7 +182,7 @@ flush_logs() {
 		return 0
 	}
 	
-	UFSTL="$devlogs/ufs_log_$al_name.log"
+	UFSTL="/sdcard/logs/ufs/ufs_log_$al_name.log"
 	$LT1 "I: ASLIB flush_logs: Flushing complete logs to $UFSTL"
 	remount_mountpoint /sdcard rw || $LT1 "E: ASLIB flush_logs: no sdcard access"
 	cold_log "DONE FLUSHING.."
@@ -189,4 +190,6 @@ flush_logs() {
 	echo "FLUSHING COLD_LOGS....$TMP_LOG"       >> $UFSTL
 	echo $'\n\n\n\n'                            >> $UFSTL
 	$LT1 "I: ASLIB flush_logs: done"
+	# copy recovery.log to ufs dir
+	(sleep 2;cat /tmp/recovery.log > /sdcard/logs/ufs/$al_name"_recovery.log") &
 }
