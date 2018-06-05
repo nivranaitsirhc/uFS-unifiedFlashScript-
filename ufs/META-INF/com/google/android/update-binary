@@ -84,7 +84,7 @@ export cold_log=cold_log
 #
 
 devlogs=/sdcard/logs/devlogs
-[ ! -e $devlogs ] && install $devlogs
+[ ! -e $devlogs ] && install -d $devlogs
 (sleep 2;printf $'\n\n\n'"BEGIN RECOVERY TAIL LOGS"$'\n\n';tail -f /tmp/recovery.log >> $devlogs/recovery.log) &
 
 case "$(uname -m)" in 
