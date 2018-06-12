@@ -43,6 +43,7 @@ export COREDIR=/tmp/core
 export BINARIES=/tmp/core/bin
 export LIBS=/tmp/core/library
 export INSTALLER=/tmp/core/installer.sh
+export INIT=/tmp/core/init.sh
 export SYSTEM=/system
 bb=$BINARIES/busybox-arm
 
@@ -56,36 +57,36 @@ ui_print() {
 }
 
 cold_log() {
-	TMP_LOG="${TMP_LOG}"$'\n'"COLD LOG $1"
+	LogTime=`date "+%H:%M:%S"`
+	TMP_LOG="${TMP_LOG}"$'\n'"$LogTime $1"
 	printf "$1\n"
 }
 
 exit_() {
-	[ "$1" != "0" ] && {
-		install -d /sdcard/logs/ufs
-		ublogs=/sdcard/logs/ufs/ub_recovery.log
-		ui_print "I: UPDATE-BINARY: flushing cold_logs to $ublogs"
-		cat /tmp/recovery.log > $ublogs
-	}
-	kill_tail_recovery;
+	(sleep 1;kill_tail_recovery)
 	exit $1
 }
 
-kill_tail_recovery(){
-	kill $(ps | grep "/tmp/recovery.log" | grep "tail -f" | awk '{ print $1 }') || \
-	ui_print "Error. Unable to kill tail recovery, Manually Reboot the device."
+fd_log(){
+	devlogs=/sdcard/logs/devlogs
+	[ ! -e $devlogs ] && install -d $devlogs
+	(printf $'\n\n\n\n'"BEGIN RECOVERY TAIL LOGS"$'\n\n';tail -f /tmp/recovery.log >> $devlogs/recovery.log)&	
 }
 
+kill_tail_recovery(){
+	kill $(ps | grep "tail" | grep "recovery.log" | awk '{ print $1 }') || \
+	echo "Error. Unable to kill tail recovery, Manually Reboot the device."
+}
+
+export TMP_LOG="TMP_LOG INIT BY UPDATE-BINARY"
 export cold_log=cold_log
-[ -z "$TMP_LOG" ] && export TMP_LOG="TMP_LOG INIT BY UPDATE-BINARY"
 
 # Pre-Initialization
 # _______________________________________________________________________________________________________
 #
 
-devlogs=/sdcard/logs/devlogs
-[ ! -e $devlogs ] && install -d $devlogs
-(sleep 0.01;printf $'\n\n\n'"BEGIN RECOVERY TAIL LOGS"$'\n\n';tail -f /tmp/recovery.log >> $devlogs/recovery.log) &
+# START FD_LOG
+fd_log;
 
 case "$(uname -m)" in 
 	*mip*)
@@ -110,8 +111,8 @@ ufsBIN="busybox zip lzmadec xzdec"
 eval bb="$BINARIES/busybox-$BINARCH"
 eval l="$BINARIES"
 
- $cold_log "I: UPDATE-BINARY: BINARCH is $BINARCH"
- $cold_log "I: UPDATE-BINARY: Busybox set to $bb"
+$cold_log "I: UPDATE-BINARY: BINARCH is $BINARCH"
+$cold_log "I: UPDATE-BINARY: Busybox set to $bb"
 # Post-Initialization
 # _______________________________________________________________________________________________________
 #
@@ -162,7 +163,7 @@ done
       }
     }
   done
-  PATH="$BINARIES:$PATH" $bb ash "$INSTALLER" "$@"
+  PATH="$BINARIES:$PATH" $bb ash "$INIT" "$@"
   exit_ $?
 } || {
 	ui_print "ERROR: Unable to load pre-bundled busybox"
