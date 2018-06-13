@@ -131,7 +131,7 @@ def_config_check || ui_print "W: Misconfigs Detetected! check logs"
 USER_INSTALLERSH=$COREDIR/install/installer.sh
 CORE_INSTALLERSH=$COREDIR/core/installer.sh
 [ -e $USER_INSTALLERSH ] && {
-	$cold_log "I: INIT.SH: DETECTED USER INIT.SH, HANDING OVER.."
+	$cold_log "I: INIT.SH: DETECTED USER INSTALLER.SH, HANDING OVER.."
 	(
 		. $USER_INSTALLERSH "$@"
 		ec="$?"
