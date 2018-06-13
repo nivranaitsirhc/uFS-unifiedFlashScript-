@@ -37,7 +37,8 @@ pre_check() {
 		$LT2 "W: ASLIB pre_check: system  is not mounted"
 		pc_system_mounted=false
 	}
-
+	
+	# Check Zip Size
 	pc_size_zip=$(du -ck $ZIP | tail -n 1 | awk '{ print $1 }')
 	
 	# Compare total system space vs zip total
