@@ -4,3 +4,4 @@
 
 ufs/core/bin	binary
 ufs/system		binary
+*.zip			binary
