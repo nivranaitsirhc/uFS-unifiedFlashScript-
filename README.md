@@ -23,10 +23,10 @@ and coding the "update_binary".
 
  1. Anything inside the system folder will be automatically installed
  2. User Configuration **`install/*`**
-	* **`config`**       - modify installer script behavior *refer to core/config/`ufsconfig`* for the right settings
-	* **`install.sh`**   - custom user script that will be loaded at runtime.
-	* **`installer.sh`** - write your custom script here, <br />
-	**Note. Main installer.sh will only load the configs and library then run this script if it exist inside the install folder**
+	* **`config`**       - modify installer script behavior *refer to `/core/config/ufsconfig`* for the right settings
+	* **`install.sh`**   - user script that will be used incoherence by the default `/core/installer.sh`.
+	* **`installer.sh`** - user custom `installer.sh`, write your custom script here, <br />
+	**Note. `init.sh` will load the configs and library then run this script if it exist inside the install folder**
 
 ## External Sources
 This repo uses busybox binaries from busybox.net, maintained by [Denys Vlasenko](mailto:vda.linux@googlemail.com) under the [GNU GPLv2](https://busybox.net/license.html).<br> 
