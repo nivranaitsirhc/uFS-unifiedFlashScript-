@@ -45,6 +45,7 @@ export LIBS=/tmp/core/library
 export INSTALLER=/tmp/core/installer.sh
 export INIT=/tmp/core/init.sh
 export SYSTEM=/system
+export BINARCH=arm
 bb=$BINARIES/busybox-arm
 
 # Functions
@@ -102,7 +103,9 @@ case "$(uname -m)" in
 		export BINARCH="arm"
 		;;
 	*86*|*64)
-		export BINARCH="x86_64"
+		{(getprop ro.product.cpu.abilist | grep x86_64) && \
+		export BINARCH="x86_64";} || \
+		export BINARCH="x86"
 		;;
 esac
 
