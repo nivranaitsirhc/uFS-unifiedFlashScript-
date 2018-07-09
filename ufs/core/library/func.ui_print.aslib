@@ -6,10 +6,8 @@
 ##### ASLIB.UI_PRINT.INIT_FD
 init_fd(){
 	for FD in `ls /proc/$$/fd`; do
-		readlink /proc/$$/fd/$FD 2>/dev/null | grep pipe >/dev/null
-		[ "$?" -eq "0" ] && {
-		  ps | grep " 3 $FD " | grep -v grep >/dev/null
-		  [ "$?" -eq "0" ] && {
+		readlink /proc/$$/fd/$FD 2>/dev/null | grep -m 1 pipe >/dev/null && {
+		  ps | grep " 3 $FD " | grep -v -m 1 grep >/dev/null && {
 			OUTFD=$FD
 			break
 		  }
@@ -63,3 +61,6 @@ print_header(){
 		set=$((++set))
 	done
 }
+
+# Loaded Message
+printf "script loaded\n"

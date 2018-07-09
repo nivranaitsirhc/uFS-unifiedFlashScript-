@@ -30,11 +30,11 @@ abort () { ui_print "$1";exit 1; }
 ui_print(){
 	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
 	echo -n -e "ui_print\n"    >> /proc/self/fd/$OUTFD
-	TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 }
 
 cold_log() {
-	TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 	printf "$1\n"
 }
 
@@ -43,12 +43,25 @@ flush_log(){
 	cold_log "I: INIT.SH: Flushing DONE!!"
 	uFS_TL=/sdcard/logs/devlogs/flush_$uFS_name.log
 	echo $'\n\n\n'"FLUSH LOG $(date)"$'\n' >> $uFS_TL
-	echo "$TMP_LOG"                        >> $uFS_TL
+	cat  "$TMP_LOG"                        >> $uFS_TL
 	echo $'\n'"DONE..."$'\n\n'             >> $uFS_TL
 }
 
+INIT_TMP_LOG() {
+	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	# Create Directory
+	[ ! -e "$TMP_LOG" ] && {
+		install -d /sdcard/logs/devlogs
+		export INIT_TMP_LOG=true
+		echo $'\n'"TMP_LOG INIT BY INIT.SH"$'\n' > $TMP_LOG
+	}
+}
+
+# START TMP_LOG
+[ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ] && INIT_TMP_LOG;
+
+
 cold_log=cold_log
-[ -z "$TMP_LOG" ] && TMP_LOG="TMP_LOG INIT BY INIT.SH"
 
 
 # INIT
@@ -93,7 +106,7 @@ ERR=0
 
 ASLIB=$LIBS/aslib
 $cold_log "I: INIT.SH: LOADING $ASLIB"
-(eval . $ASLIB 1>/dev/null) && \
+(. $ASLIB >/dev/null 2>&1) && \
 . $ASLIB || {
 	ui_print "E: ERROR $E_ANL: aslib is not loadable!!"
 	abort $E_ANL
@@ -104,7 +117,7 @@ ER_CODE=$COREDIR/config/er_code
 UFSCONFIG=$COREDIR/config/ufsconfig
 for config in $ER_CODE $UFSCONFIG; do
 	$cold_log "I: INIT.SH: LOADING $config"
-	(eval . $config 1>/dev/null) && \
+	(. $config >/dev/null 2>&1) && \
 	. $config  || \
 	$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
 done
@@ -115,7 +128,7 @@ USER_INSTALLSH=$COREDIR/install/install.sh
 ( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && \
 for config in $USERCONFIG $USER_INSTALLSH; do
 	$cold_log "I: INIT.SH: LOADING $config"
-	(eval . $config 1>/dev/null) && \
+	(. $config >/dev/null 2>&1) && \
 	. $config  || \
 	$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
 done || \
@@ -161,5 +174,9 @@ CORE_INSTALLERSH=$COREDIR/installer.sh
 	$cold_log "E: INIT.SH: Error Executing installer.sh, Check /sdcard/logs/devlogs"
 	flush_log
 }
+
+# clear list
+clear_list;
+
 # EXIT WITH ERRCODE FROM INSTALLER.SH
 return "$INSTL_ERR"

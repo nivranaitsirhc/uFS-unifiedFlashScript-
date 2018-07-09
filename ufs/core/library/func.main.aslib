@@ -14,14 +14,10 @@ asWipelist() {
 	# create wipe list
 	create_wipelist;
 	
-	[ -z "$wipe_list" ] && {
-		$LT2 "E: ASLIB asWipelist: wipe_list var is null, maybe create_wipelist failed?"
-		return 1
-	} || {
-		for WIPE in $wipe_list; do
-			wipe_system_file "$WIPE"
-		done
-	}
+	# wipe files
+	for WIPE in $(cat $wipe_list); do
+		wipe_system_file "$WIPE"
+	done
 }
 
 ##### ASLIB.BASIC.ASADDON
@@ -51,12 +47,6 @@ asAddon() {
 	# check flashmode
 	[ $aub = "0" ] && {
 		$LT2 "E: ASLIB asAddon: This function should be run in flashmode"
-		ERR_STAT=$((++ERR_STAT));
-	}
-
-	# check file_list & wipe_list
-	[[ -z "wipe_list" && -z "file_list" ]] && {
-		$LT2 "W: ASLIB asAddon: empty list"
 		ERR_STAT=$((++ERR_STAT));
 	}
 
@@ -92,23 +82,33 @@ asAddon() {
 	addon_filename="$ind-$addon_name.sh";
 	
 	# fix file_list
-	file_list=$(echo "${file_list}" | sort -ur  | sed '/^$/d')
+	$LT4 "I: ASLIB asAddon: fixing file_list"
+	echo "$(cat $file_list | sort -ur | sed '/^ *$/d')" > $file_list
 
 	# sed file_list to addon_tail
 	$LT2 "I: ASLIB asAddon: injecting install list to $addon_tail"
-	for _file_list in $file_list; do
-		sed -i "\:cat <<EOF:a$_file_list" $addon_tail
+	for _file_list in $(cat $file_list); do
+		sed -i "\:#list_file_guide:a$_file_list" $addon_tail
 		$LT3 "D: ASLIB asAddon: <- $_file_list"
 	done
 	
 	# fix wipe_list
-	wipe_list=$(echo "${wipe_list}" | sort -ur | sed '/^$/d')
+	$LT4 "I: ASLIB asAddon: fixing wipe_list"
+	echo "$(cat $wipe_list | sort -ur | sed '/^ *$/d')" > $wipe_list
 	
 	# sed the wipelist to addon_tail
 	$LT2 "I: ASLIB asAddon: injecting wipe list to $addon_tail"
-	for _wipe_file in $wipe_list; do
+	for _wipe_file in $(cat $wipe_list); do
 		sed -i "\:wipe_list=:a$_wipe_file" $addon_tail
 		$LT3 "D: ASLIB asAddon: <- $_wipe_file"
+	done
+	
+	# inject the linkfile
+	$LT2 "I: ASLIB asAddon: injecting link list to $addon_tail"
+	local IFS=$'\n'
+	for L in $(tac $link_list); do
+		sed -i "\:#list_link_guide:a$L" $addon_tail
+		$LT3 "D: ASLIB asAddon: <- $L"
 	done
 
 	# set addon properties
@@ -141,7 +141,6 @@ asExtract() {
 		return 0
 	}
 	
-
 	# def check
 	def_check;
 
@@ -189,39 +188,138 @@ asInstall() {
 	}
 
 	# var. def.
-	file_list=;ops_count=0;progress=0;
+	ops_count=0;progress=0;
 	progress 0 0;
 
 	# prepare count for fancy progress
 	for dummy in $(find $SOURCESYS); do
 		ops_count=$((++ops_count));
 	done
-
 	ops_arbiter=$(awk "BEGIN {printf \"%.5f\",1/$ops_count}")
+
+	
+	#
+	# INSTALL APP LIB
+	#
+	# Get Current ABI
+	
+	is_enabled aslib_asInstall_ow && aslib_overwrite=true || aslib_overwrite=false
+	
+	export TMPLIB=/sdcard/tmplib
+	[ ! -e "$TMPLIB" ] && install -d "$TMPLIB"
+	
+	INSLIB=true
+	ABILIST="$(get_prop ro.product.cpu.abilist)"
+	[ -n "$ABILIST" ] && {
+		case $ABILIST in
+			*arm64-v8a*)
+				$LT4 "I: ASLIB asInstall: setting LIB to arm64"
+				export ABI="arm64-v8a"
+				export LIB=arm64
+				export VENDORLIB=/system/vendor/lib64
+				;;
+			*armeabi-v7a* | *armeabi*)
+				$LT4 "I: ASLIB asInstall: setting LIB to arm"
+				export ABI="armeabi-v7a"
+				export LIB=arm
+				export VENDORLIB=/system/vendor/lib
+				;;
+			*)
+				$LT4 "W: ASLIB asInstall: system is not supported "
+				INSLIB=false
+				;;
+		esac
+	} || {
+		$LT4 "E: ASLIB asInstall: UNABLE TO GET abilist"
+		INSLIB=false
+	}
 	
 	# install files
 	for TARGET in $(find $SOURCESYS | sort); do
 		progress=$(awk "BEGIN {printf \"%.5f\",$progress + $ops_arbiter}")
 		set_progress $progress
 		FILE=/system${TARGET#$SOURCESYS}
-		if [ -d "$TARGET" ] ;then
-			_new_install="$(echo "$FILE" | cut -d/ -f 3-4)"
+		TARGETAPP="$(echo "$FILE" | cut -d/ -f 3-4)"
+		if [ -d "$TARGET" ];then
+			_new_install="$TARGETAPP"
 			[ "$_new_install" != "$_old_install" ] && {
 				$LT2 "I: ASLIB asInstall <- $_new_install"
 				_old_install="$_new_install"
 			}
-			[ ! -e $FILE ] && {
-					install -d $FILE || $LT4 "E: ASLIB asInstall: Failed to create $FILE" && \
+			[ ! -e "$FILE" ] && {
+					install -d "$FILE" || $LT4 "E: ASLIB asInstall: Failed to create $FILE" && \
 					set_perm 0 0 0755 "$FILE"
 			}
 		else
-			dd if="$TARGET" of="$FILE"
-			[ ! -e "$FILE" ] && { $LT3 "E: ASLIB asInstall: Failed to install $FILE"; } || {
-				file_list="${file_list}${FILE#/system/}"$'\n';
-				set_system_fp "$FILE"
+			SYSTEMINST="$(echo "$FILE" | cut -d/ -f 3-3)";SYSTEMPATH="$(echo "$FILE" | cut -d/ -f 1-4)";
+			echo "$FILE" | grep apk >/dev/null && [[ "$INSLIB" == "true" && "$SYSTEMINST" == "app" || "$SYSTEMINST" == "priv-app" ]] && {
+				$LT4 "I: ASLIB asInstall: unzipping.. $TARGETAPP"
+				# Reset INSTALL
+				INSTALL=false;TARGET_LIST="$(unzip $TARGET -l)"
+				if [ "$ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null);then
+					install_app_lib && INSTALL=true; 
+				else
+					$LT4 "I: ASLIB asInstall: $TARGET has no arm64-v8a library. trying armeabi-v7a"
+					ABI="armeabi-v7a";LIB=arm;VENDORLIB=/system/vendor/lib
+					if (echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null);then
+						install_app_lib && INSTALL=true;
+					else
+						$LT4 "I: ASLIB asInstall: $TARGET has no armeabi-v7a library. trying armeabi"
+						ABI="armeabi";
+						(echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null) && {
+							install_app_lib && INSTALL=true;
+						} || $LT4 "I: ASLIB asInstall: $TARGET has no package lib"
+					fi
+				fi
+				
+				[ "$INSTALL" == "false" ] && {
+					# lets check if a lib is defined in its directory lets copy that.
+					AD="$(dirname $TARGET)/lib"
+					[ -e "$AD" ] && {
+						$LT4 "I: ASLIB asInstall: $TARGET has included library. installing.."
+						for L in $(find $AD -name *.so);do
+							F="$SYSTEMPATH/lib${L#$AD}"
+							install -d "$(dirname $L)"
+							for L in $(find "$SYSTEMPATH" -type d); do
+								set_perm 0 0 755 $L
+							done
+							#eval echo 'find "$SYSTEMPATH" -type d -exec chmod 755 {} +\;'>> $link_list
+							$LT4 "I: ASLIB asInstall: installing so file to $F"
+							dd if="$L" of="$F"
+							set_perm 0 0 644 "$F"
+							#file_list="${file_list}${F#/system/}"$'\n';
+							file_list "${F#/system/}"
+						done
+					}
+				}
+				
 			}
+			
+			
+			# INSTALL FILE
+			# lets ignore /system/app/app/lib only if there is an APK
+			if [[ "$(echo $FILE | cut -d/ -f 5-5)" != "lib" || ! -e "$SOURCESYS/$TARGETAPP/$(echo $FILE | cut -d/ -f 4-4).apk" ]];then
+				if [ -e "$FILE" ];then
+					$LT4 "W: ASLIB asInstall: $FILE already exist. "
+					# check if the file is the same if yes just ignore it
+					(cmp -s "$TARGET" "$FILE" >/dev/null 2>&1) && {
+						$LT4 "I: ASLIB asInstall: The file are the same, ignoring install"
+						file_list "${FILE#/system/}" # if it exist lets preserve it also.
+					} || {
+						[ "$aslib_overwrite" == "true" ] && {
+							$LT4 "I: ASLIB asInstall: install overwrite enabled, overwriting $FILE"
+							install_file;
+						} || $LT4 "W: ASLIB asInstall: asInstall is not allowed to overwrite the file, ignoring"
+					} 
+				else
+					install_file
+				fi
+			fi
 		fi
 	done
 	progress 1 1
 	sleep 3
 }
+
+# Loaded Message
+printf "script loaded\n"

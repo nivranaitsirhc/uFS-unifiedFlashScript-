@@ -160,6 +160,7 @@ def_config_check() {
 	$LT4 "D: ASLIB exec def_config_check"
 	# logic, aslib has default configs when loaded,
 	# but will be overridden by configs defined by $config_loc
+	e=0;
 	[[ -z "$loc_of_config" || ! -e "$loc_of_config" ]] && {
 		$LT2 "W: ASLIB def_config_check: undefined or not existing config_loc. $loc_of_config"
 		e=1
@@ -195,7 +196,7 @@ def_config_check() {
 				$LT3 "D: ASLIB def_config_check: ufsConfig: $(printf "%-20s %s\n" $CONF "-> ${GVAL}")"
 			} || {
 				$LT3 "W: ASLIB def_config_check: $CONF is not defined in $loc_of_config, trying default."
-				grep -m1 "$CONF=" "$loc_of_aslib" 2>&1 >/dev/null && {
+				grep -m 1 "$CONF=" "$loc_of_aslib" 2>&1 >/dev/null && {
 					GVAL=$(get_file_prop $loc_of_aslib $CONF)
 					[ -n "$GVAL" ] && {
 						eval $CONF="${GVAL}"
@@ -217,3 +218,5 @@ def_config_check() {
 }
 
 
+# Loaded Message
+printf "script loaded\n"

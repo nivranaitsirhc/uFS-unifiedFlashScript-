@@ -62,11 +62,8 @@ alLInit() {
 	fi
 	
 	# COLD_LOG TURN-OVER
-	local PRO_LOG="$TMP_LOG"                           # TRANSFER LOGS TO PROBITIONARY CONTAINER
-	TMP_LOG=                                           # CLEAR TMP_LOG
-	alLog "ui_print" "I: LOADING COLD_LOGS..$PRO_LOG"  # FLUSH COLD_LOGS to ASLIB LOG
-	cold_log=alLog                                     # TRANSITION COLD_LOG TO ALLOG
-	PRO_LOG=                                           # CLEAR PROBITIONARY CONTAINER
+	cat "$TMP_LOG"	>	$logfile	# COPY TMP_LOG TO LOG FILE
+	cold_log=alLog					# TRANSITION COLD_LOG TO ALLOG
 	
 	al_init=1
 }
@@ -86,7 +83,7 @@ alLSet() {
 	}
 
 	[ "$1" == "name" ] && {
-		al_name=$2
+		al_name="$2"
 		$cold_log "I: ASLIB allSet: logname set to $2"
 	}
 
@@ -115,7 +112,7 @@ alLSet() {
 				;;
 			*)
 				$cold_log "I: ASLIB alLSet: type set to $2"
-				aslib_log_type=$2
+				aslib_log_type="$2"
 				;;
 		esac
 
@@ -175,13 +172,33 @@ alLog() {
 	} || read IN
 
 	[ -n "$IN" ] && {
-		echo 	"$(date "+%H:%M:%S") $IN" >> $logfile
-		TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $IN"        
+		DATE="$(date "+%H:%M:%S")"
+		echo "$DATE $IN" >> $logfile
+		echo "$DATE $IN" >> $TMP_LOG
+		#TMP_LOG="${TMP_LOG}"$'\n'"$DATE $IN"   
 	}
 }
 
 ##### ASLIB.COLD_LOG
 cold_log() {
-	TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	#TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 	printf "$1\n"
 }
+
+##### ASLIB.TMP_LOG
+INIT_TMP_LOG() {
+	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	# Create Directory
+	[ ! -e "$TMP_LOG" ] && {
+		install -d /sdcard/logs/devlogs
+		export INIT_TMP_LOG=true
+		echo $'\n'"TMP_LOG INIT BY ASLIB_LOGGING"$'\n' > $TMP_LOG
+	}
+}
+
+# START TMP_LOG
+if [ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ];then  INIT_TMP_LOG;fi
+
+# Loaded Message
+printf "script loaded\n"

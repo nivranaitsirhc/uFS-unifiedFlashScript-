@@ -61,3 +61,72 @@ extract_zip() {
 	} || return 0
 }
 
+###### ASLIB.SUB.INSTALL_APP_LIB
+install_app_lib(){
+	# asInstall Sub
+	# Clear TMPLIB
+	unzip -o "$TARGET" "lib/$ABI/*" -d "$TMPLIB" && {
+		for SO in $(ls $TMPLIB/lib/$ABI); do
+			TMP_SO="$TMPLIB/lib/$ABI/$SO";
+			VEN_SO="$VENDORLIB/$SO";
+			APP_SO="$SYSTEMPATH/lib/$LIB/$SO"
+			if [ -e $VEN_SO ];then
+				cmp -s "$TMPLIB/lib/$ABI/$SO" "$VENDORLIB/$SO" >/dev/null 2>&1 && {
+					$LT4 "I: ASLIB install_app_lib: Linking in APP DIR, a same version exist in $VENDORLIB - $SO "
+					#install -d "$SYSTEMPATH/lib/$LIB/"	&& eval echo 'install -d "$SYSTEMPATH/lib/$LIB/"'	>> $link_list
+					#ln -sfn "$VEN_SO" "$APP_SO"		&& eval echo 'ln -sfn "$VEN_SO" "$APP_SO"'			>> $link_list
+					#set_system_fp "$APP_SO"
+					#file_list "${APP_SO#/system/}"
+					install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
+				} || {
+					$LT4 "I: ASLIB install_app_lib: Installing in APP DIR, A different SO already exist in $VENDORLIB - $SO"
+					install -d "$SYSTEMPATH/lib/$LIB/"
+					dd if="$TMP_SO" of="$APP_SO"
+					set_system_fp "$APP_SO";
+					file_list "${APP_SO#/system/}"
+				}
+			else
+				$LT4 "I: ASLIB install_app_lib: Installing in $VENDORLIB - $SO"
+				dd if="$TMP_SO" of="$VEN_SO"
+				set_system_fp "$VEN_SO";
+				file_list "${VEN_SO#/system/}"
+				$LT4 "I: ASLIB install_app_lib: Linking $SO to APP DIR."
+				#install -d "$SYSTEMPATH/lib/$LIB/"		&& eval echo 'install -d "$SYSTEMPATH/lib/$LIB/"'	>> $link_list
+				#ln -sfn "$VEN_SO" "$APP_SO"				&& eval echo 'ln -sfn "$VEN_SO" "$APP_SO"'			>> $link_list
+				#set_system_fp "$APP_SO"
+				#file_list "${APP_SO#/system/}"
+				install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
+			fi
+		done
+		# Clean TMPLIB
+		rm -rf $TMPLIB/*
+	} || $LT4 "I: ASLIB install_app_lib: Error in extracting lib from $TARGET"
+
+}
+
+install_file(){
+	# asInstall sub
+	dd if="$TARGET" of="$FILE"
+	[ ! -e "$FILE" ] && { $LT3 "E: ASLIB install_file: Failed to install $FILE"; } || {
+		file_list "${FILE#/system/}"
+		set_system_fp "$FILE";
+	}
+}
+
+install_link_file() {
+	[ ! -e "$1" ] && {
+		install -d "$1"
+		for L in $(find "$2" -type d);do
+			set_perm 0 0 755 "$L"
+		done
+	}
+	ln -sfn "$3" "$4" &&\
+	$LT4 "I: ASLIB install_link_file: LINKED $VENDORLIB TO $4" ||\
+	$LT4 "E: ASLIB install_link_file: FAILED TO LINK"
+	#eval echo "install -d \\\"$1\\\""	>> $link_list
+	#eval echo "find \\\"$2\\\" -type d -exec chmod 755 {} +\;"	>> $link_list
+	eval echo "$3 $4"	>> $link_list
+}
+
+# Loaded Message
+printf "script loaded\n"

@@ -1,4 +1,4 @@
-#!/sbin/sh
+#!/sbin/ash
 #
 #	uniFlashScript
 #
@@ -170,7 +170,7 @@ is_enabled calculatespace && {
 	install_size=$(du -ck $SOURCESYS | tail -n 1 | awk '{ print $1 }')
 
 	$cold_log "I: INSTALLER.SH: Calculating system WIPE_SIZE"
-	for TARGET in $wipe_list; do
+	for TARGET in $(cat $wipe_list); do
 		[ -e /system/$TARGET ] && {
 			tmp_size=$(du -ck /system/$TARGET | tail -n 1 | awk '{ print $1 }')
 			wipe_size=$(($tmp_size+$wipe_size))

@@ -16,7 +16,7 @@ toolbox_mount() {
 	local POINT=;
 	local FS=;
 	
-	for i in `cat /etc/fstab | grep "$1"`; do
+	for i in `cat /etc/fstab | grep -m 1 "$1"`; do
 		if [ -z "$DEV" ]; then
 			DEV=$i
 		elif [ -z "$POINT" ]; then
@@ -37,7 +37,7 @@ toolbox_mount() {
 	
 	DEV=;POINT=;FS=;
 	
-	for i in `cat /etc/recovery.fstab | grep "$1"`; do
+	for i in `cat /etc/recovery.fstab | grep -m 1 "$1"`; do
 		if [ -z "$POINT" ]; then
 			POINT=$i
 		elif [ -z "$FS" ]; then
@@ -87,3 +87,6 @@ remount_mountpoint() {
 		return $stat
 	}
 }
+
+# Loaded Message
+printf "script loaded\n"

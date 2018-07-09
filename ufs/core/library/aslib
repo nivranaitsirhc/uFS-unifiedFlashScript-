@@ -18,6 +18,9 @@
 # ___________________________________________________________________________________________________________ <- 110 Char
 #
 
+# set ulimit
+ulimit -s 65536
+
 export aslib_version=1000
 export aslib_funcbasic="ui_print set_perm set_progress progress get_prop set_file_prop";
 export aslib_funcmain="asAddon asExtract asInstall asWipelist"
@@ -77,9 +80,6 @@ export pc_stat_tmp=0                    # autogen : 0 if tmp has no errors
 #
 #
 
-export wipe_list=
-export file_list=
-
 export SOURCEDIR=
 export SOURCEFS=
 export SOURCESYS=                       
@@ -113,6 +113,7 @@ aslib_req
 aslib_asWipelist
 aslib_asAddon
 aslib_asInstall
+aslib_asInstall_ow
 aslib_asExtract
 aslib_log_type
 aslib_log_level
@@ -157,12 +158,27 @@ export LT4=cold_log	# ! DO NOT MODITY ! Logging Tag-4 cold_log means disabled
 #
 ##### ASLIB.COLD_LOG
 cold_log() {
-	TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	#TMP_LOG="${TMP_LOG}"$'\n'"$(date "+%H:%M:%S") $1"
+	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 	printf "$1\n"
 }
 
+
+INIT_TMP_LOG() {
+	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	# Create Directory
+	[ ! -e "$TMP_LOG" ] && {
+		install -d /sdcard/logs/devlogs
+		export INIT_TMP_LOG=true
+		echo $'\n'"TMP_LOG INIT BY UPDATE-BINARY"$'\n' > $TMP_LOG
+	}
+}
+
+# START TMP_LOG
+[ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ] && INIT_TMP_LOG;
+
+# Cold_Log
 cold_log=cold_log
-[ -z "$TMP_LOG" ] && TMP_LOG="TMP_LOG INIT BY ASLIB"
 
 # PRE_INIT
 # ___________________________________________________________________________________________________________ <- 110 Char
@@ -174,12 +190,14 @@ cold_log=cold_log
 }
 
 # LOAD ALL FUNCTIONS
-cold_log "I: ASLIB LOADING LIBRARIES"
+$cold_log "I: ASLIB LOADING LIBRARIES"
 for func in $(ls $LIBS/func.*.aslib);do
-	(eval . $func 1>/dev/null) && \
-	. $func && \
-	cold_log "I: ASLIB LOADED $func" || \
-	cold_log "E: FUNCTION UNLOADABLE"
+	$cold_log "I: LOADING $func"
+	[ -e $func ] && \
+	command . $func && \
+	$cold_log "I: ASLIB LOADED $func" || {
+	$cold_log "E: FUNCTION UNLOADABLE"
+	}
 done
 
 # INIT

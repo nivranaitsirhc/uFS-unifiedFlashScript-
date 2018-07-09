@@ -7,11 +7,9 @@
 is_mounted() {
 	$LT4 "D: ASLIB exec is_mounted with $1 $2"
 	[ -n "$2" ] && {
-		cat /proc/mounts | grep $1 | grep $2, >/dev/null 2>&1
-		s=$?
+		cat /proc/mounts | grep $1 | grep -m 1 $2,	>/dev/null 2>&1 && s=0 || s=1
 	} || {
-		cat /proc/mounts | grep $1            >/dev/null 2>&1
-		s=$?
+		cat /proc/mounts | grep -m 1 $1				>/dev/null 2>&1	&& s=0 || s=1
 	}
 	[ "$s" == "0" ] && \
 	$LT4 "D: ASLIB is_mounted: $1 is mounted $2" || \
@@ -40,3 +38,5 @@ is_enabled() {
 	return $s
 }
 
+# Loaded Message
+printf "script loaded\n"

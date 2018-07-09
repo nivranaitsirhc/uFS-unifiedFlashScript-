@@ -29,39 +29,40 @@ get_prop() {
 ##### ASLIB.ADD.GET_FILE_PROP
 get_file_prop() {
 	if [ -f "$1" ];then
-		prop_f=$1
-		prop_v=$2
+		prop_f="$1"
+		prop_v="$2"
 	elif [ -f "$2" ];then
-		prop_f=$2
-		prop_v=$1
+		prop_f="$2"
+		prop_v="$1"
 	else
 		$LT3 "E: ASLIB get_file_prop: No valid file"
 		return 1
 	fi
-	grep -m1 "^$prop_v=" "$prop_f" | cut -d= -f2
+	grep -m 1 "^$prop_v=" "$prop_f" | cut -d= -f2
 }
 
 ##### ASLIB.ADD.SET_FILE_PROP
 set_file_prop() {
 	if [ -f "$1" ];then
-		prop_f=$1
-		prop_v=$2
-		prop_n=$3
+		prop_f="$1"
+		prop_v="$2"
+		prop_n="$3"
 	elif [ -f "$2" ];then
-		prop_f=$2
-		prop_v=$1
-		prop_n=$3
+		prop_f="$2"
+		prop_v="$1"
+		prop_n="$3"
 	elif [ -f "$3" ];then
-		prop_f=$3
-		prop_v=$1
-		prop_n=$2
+		prop_f="$3"
+		prop_v="$1"
+		prop_n="$2"
 	else
 		$LT2   "E: ASLIB set_file_prop: No valid file"
 		return 1
 	fi
 	# change $var's value if $var present in the file
-	grep -q "$prop_v=" "$prop_f" && (sed "s/^$prop_v=.*$/$prop_v=$prop_n/" -i "$prop_f")
+	grep -q -m 1 "$prop_v=" "$prop_f" && (sed "s/^$prop_v=.*$/$prop_v=$prop_n/" -i "$prop_f")
 	$LT2 "I: ASLIB set_file_prop: $prop_f <- $prop_v to $prop_n"
 }
 
-
+# Loaded Message
+printf "script loaded\n"

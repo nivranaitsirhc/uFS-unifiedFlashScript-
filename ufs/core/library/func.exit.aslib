@@ -17,3 +17,5 @@ abort(){
 }
 
 
+# Loaded Message
+printf "script loaded\n"
