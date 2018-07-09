@@ -98,7 +98,7 @@ asAddon() {
 	
 	# sed the wipelist to addon_tail
 	$LT2 "I: ASLIB asAddon: injecting wipe list to $addon_tail"
-	for _wipe_file in $(cat $wipe_list); do
+	for _wipe_file in $(tac $wipe_list); do
 		sed -i "\:wipe_list=:a$_wipe_file" $addon_tail
 		$LT3 "D: ASLIB asAddon: <- $_wipe_file"
 	done
@@ -209,23 +209,24 @@ asInstall() {
 	[ ! -e "$TMPLIB" ] && install -d "$TMPLIB"
 	
 	INSLIB=true
+	export RO_ABI=;export ABI=;export LIB=;export VENDORLIB=;
 	ABILIST="$(get_prop ro.product.cpu.abilist)"
 	[ -n "$ABILIST" ] && {
 		case $ABILIST in
 			*arm64-v8a*)
 				$LT4 "I: ASLIB asInstall: setting LIB to arm64"
-				export ABI="arm64-v8a"
-				export LIB=arm64
-				export VENDORLIB=/system/vendor/lib64
+				ABI="arm64-v8a"
+				LIB="arm64"
+				VENDORLIB="/system/vendor/lib64"
 				;;
 			*armeabi-v7a* | *armeabi*)
 				$LT4 "I: ASLIB asInstall: setting LIB to arm"
-				export ABI="armeabi-v7a"
-				export LIB=arm
-				export VENDORLIB=/system/vendor/lib
+				ABI="armeabi-v7a"
+				LIB="arm"
+				VENDORLIB="/system/vendor/lib"
 				;;
 			*)
-				$LT4 "W: ASLIB asInstall: system is not supported "
+				$LT4 "W: ASLIB asInstall: system LIB is not supported "
 				INSLIB=false
 				;;
 		esac
@@ -233,6 +234,11 @@ asInstall() {
 		$LT4 "E: ASLIB asInstall: UNABLE TO GET abilist"
 		INSLIB=false
 	}
+	RO_ABI=$ABI
+	$LT4 "D: ASLIB asInstall: ABI       -> $ABI"
+	$LT4 "D: ASLIB asInstall: LIB       -> $LIB"
+	$LT4 "D: ASLIB asInstall: VENDORLIB -> $VENDORLIB"
+	
 	
 	# install files
 	for TARGET in $(find $SOURCESYS | sort); do
@@ -252,25 +258,27 @@ asInstall() {
 			}
 		else
 			SYSTEMINST="$(echo "$FILE" | cut -d/ -f 3-3)";SYSTEMPATH="$(echo "$FILE" | cut -d/ -f 1-4)";
-			echo "$FILE" | grep apk >/dev/null && [[ "$INSLIB" == "true" && "$SYSTEMINST" == "app" || "$SYSTEMINST" == "priv-app" ]] && {
+			echo "$FILE" | grep -m1 apk >/dev/null && [[ "$INSLIB" == "true" && "$SYSTEMINST" == "app" || "$SYSTEMINST" == "priv-app" ]] && {
 				$LT4 "I: ASLIB asInstall: unzipping.. $TARGETAPP"
 				# Reset INSTALL
-				INSTALL=false;TARGET_LIST="$(unzip $TARGET -l)"
-				if [ "$ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null);then
+				INSTALL=false
+				TARGET_LIST="$(unzip -l $TARGET)"
+				[ "$RO_ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
+					ABI="arm64-v8a";LIB="arm64";VENDORLIB="/system/vendor/lib64"
 					install_app_lib && INSTALL=true; 
-				else
+				} || {
 					$LT4 "I: ASLIB asInstall: $TARGET has no arm64-v8a library. trying armeabi-v7a"
-					ABI="armeabi-v7a";LIB=arm;VENDORLIB=/system/vendor/lib
-					if (echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null);then
+					ABI="armeabi-v7a";LIB="arm";VENDORLIB="/system/vendor/lib"
+					(echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
 						install_app_lib && INSTALL=true;
-					else
+					} || {
 						$LT4 "I: ASLIB asInstall: $TARGET has no armeabi-v7a library. trying armeabi"
 						ABI="armeabi";
-						(echo "$TARGET_LIST" | grep "lib/$ABI" >/dev/null) && {
+						(echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
 							install_app_lib && INSTALL=true;
 						} || $LT4 "I: ASLIB asInstall: $TARGET has no package lib"
-					fi
-				fi
+					}
+				}
 				
 				[ "$INSTALL" == "false" ] && {
 					# lets check if a lib is defined in its directory lets copy that.
@@ -281,12 +289,12 @@ asInstall() {
 							F="$SYSTEMPATH/lib${L#$AD}"
 							install -d "$(dirname $L)"
 							for L in $(find "$SYSTEMPATH" -type d); do
-								set_perm 0 0 755 $L
+								set_perm 0 0 0755 $L
 							done
 							#eval echo 'find "$SYSTEMPATH" -type d -exec chmod 755 {} +\;'>> $link_list
 							$LT4 "I: ASLIB asInstall: installing so file to $F"
 							dd if="$L" of="$F"
-							set_perm 0 0 644 "$F"
+							set_perm 0 0 0644 "$F"
 							#file_list="${file_list}${F#/system/}"$'\n';
 							file_list "${F#/system/}"
 						done

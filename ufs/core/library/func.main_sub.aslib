@@ -64,7 +64,7 @@ extract_zip() {
 ###### ASLIB.SUB.INSTALL_APP_LIB
 install_app_lib(){
 	# asInstall Sub
-	# Clear TMPLIB
+	$LT4 "D: ASLIB install_app_lib: Processing AppLib using $ABI, $LIB, $VENDORLIB"
 	unzip -o "$TARGET" "lib/$ABI/*" -d "$TMPLIB" && {
 		for SO in $(ls $TMPLIB/lib/$ABI); do
 			TMP_SO="$TMPLIB/lib/$ABI/$SO";
@@ -73,11 +73,8 @@ install_app_lib(){
 			if [ -e $VEN_SO ];then
 				cmp -s "$TMPLIB/lib/$ABI/$SO" "$VENDORLIB/$SO" >/dev/null 2>&1 && {
 					$LT4 "I: ASLIB install_app_lib: Linking in APP DIR, a same version exist in $VENDORLIB - $SO "
-					#install -d "$SYSTEMPATH/lib/$LIB/"	&& eval echo 'install -d "$SYSTEMPATH/lib/$LIB/"'	>> $link_list
-					#ln -sfn "$VEN_SO" "$APP_SO"		&& eval echo 'ln -sfn "$VEN_SO" "$APP_SO"'			>> $link_list
-					#set_system_fp "$APP_SO"
-					#file_list "${APP_SO#/system/}"
 					install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
+					file_list "${VEN_SO#/system/}"
 				} || {
 					$LT4 "I: ASLIB install_app_lib: Installing in APP DIR, A different SO already exist in $VENDORLIB - $SO"
 					install -d "$SYSTEMPATH/lib/$LIB/"
@@ -91,10 +88,6 @@ install_app_lib(){
 				set_system_fp "$VEN_SO";
 				file_list "${VEN_SO#/system/}"
 				$LT4 "I: ASLIB install_app_lib: Linking $SO to APP DIR."
-				#install -d "$SYSTEMPATH/lib/$LIB/"		&& eval echo 'install -d "$SYSTEMPATH/lib/$LIB/"'	>> $link_list
-				#ln -sfn "$VEN_SO" "$APP_SO"				&& eval echo 'ln -sfn "$VEN_SO" "$APP_SO"'			>> $link_list
-				#set_system_fp "$APP_SO"
-				#file_list "${APP_SO#/system/}"
 				install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
 			fi
 		done
@@ -117,7 +110,7 @@ install_link_file() {
 	[ ! -e "$1" ] && {
 		install -d "$1"
 		for L in $(find "$2" -type d);do
-			set_perm 0 0 755 "$L"
+			set_perm 0 0 0755 "$L"
 		done
 	}
 	ln -sfn "$3" "$4" &&\
