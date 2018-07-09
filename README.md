@@ -29,9 +29,8 @@ and coding the "update_binary".
 	**Note. `init.sh` will load the configs and library then run this script if it exist inside the install folder**
 
 ## External Sources
-This repo uses busybox binaries from busybox.net, maintained by [Denys Vlasenko](mailto:vda.linux@googlemail.com) under the [GNU GPLv2](https://busybox.net/license.html).<br> 
-Check the [source](https://git.busybox.net/busybox).
-
+This repo uses busybox binaries by osm0sis android-busybox-ndk, maintained by [osm0sis](https://github.com/osm0sis),<br> 
+Check the [source](https://github.com/osm0sis/android-busybox-ndk).
 
 <br /> <br />
 **CodRLabworks** <br />
