@@ -12,9 +12,7 @@ toolbox_mount() {
 	
 	$LT4 "D: ASLIB toolbox_mount: mounting using using /etc/fstab entry"
 
-	local DEV=;
-	local POINT=;
-	local FS=;
+	local DEV=;local POINT=;local FS=;
 	
 	for i in `cat /etc/fstab | grep -m 1 "$1"`; do
 		if [ -z "$DEV" ]; then

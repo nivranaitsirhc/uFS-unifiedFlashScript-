@@ -5,13 +5,13 @@
 
 case "$(uname -m)" in 
 	*64*)
-		LIB=lib64
+		local LIB=lib64
 		;;
-	*)	LIB=lib
+	*)	local LIB=lib
 		;;
 esac
 
-SYSTEMLIB=/system/$LIB:/vendor/$LIB
+export SYSTEMLIB=/system/$LIB:/vendor/$LIB
 
 ##### ASLIB.SUB.SET_PERM
 # - set_perm	input1 input2 input3 input4 input 5
@@ -78,25 +78,32 @@ set_system_fp() {
 	
 	case $_sys in
 		bin|xbin)
-			set_perm 0 2000 0755 "$1"
+			set_perm 0 2000 0755 "$1" && \
 			chmod +x "$1"
 		;;
 		vendor)
 			local _sysv="$(echo "$1" | cut -d / -f 4-4)"
 			case $_sysv in
 				bin|xbin)
-				set_perm 0 2000 0755 "$1"
-				chmod +x "$1"
+					set_perm 0 2000 0755 "$1" && \
+					chmod +x "$1"
 				;;
 				*)
-				set_perm 0 0 0644 "$1"
+					set_system_fp_f "$1"
 				;;
 			esac
 		;;
 		*)
-			set_perm 0 0 0644 "$1"
+			set_system_fp_f "$1"
 		;;
 	esac
+}
+
+set_system_fp_f(){
+# set_system_fp sub
+local CM=0755;
+	[ -f "$1" ] && CM=0644 || CM=0755
+	set_perm 0 0 $CM "$1"
 }
 
 # Loaded Message

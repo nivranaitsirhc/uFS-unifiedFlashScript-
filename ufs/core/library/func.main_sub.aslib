@@ -6,26 +6,23 @@
 ##### ASLIB.SUB.WIPE_SYSTEM_FILES
 wipe_system_file() {
 	$LT4 "D: ASLIB exec wipe_system_file"
-	# Added    08:43 08/05/2017
-	# Modified 10:20 04/14/2018 - made target specific
-	# Delete files inside the target folder
 	if [ -e "/system/$1" ]; then
 		# determine type
 		if [ -d "/system/$1" ]; then
 			# delete recursively
-			$LT3 "I: ASLIB wipe_system_file: wiping folder -> $1"
+			$LT3 "I: ASLIB wipe_system_file: WIPING FOLDER -> $1"
 			rm -fR "/system/$1"
 		elif [ -f "/system/$1" ]; then
 			# delete file
-			$LT3 "I: ASLIB wipe_system_file: wiping file   -> $1"
+			$LT3 "I: ASLIB wipe_system_file: WIPING FILE   -> $1"
 			rm -f "/system/$1"
 		fi
 		# double checked if removed
 		[ -e "/system/$1" ] && {
-			$LT3 "I: ASLIB wipe_system_file: Failed to wipe"
+			$LT3 "I: ASLIB wipe_system_file: FAILED TO WIPE"
 		}
 	else
-		$LT3 "I: ASLIB wipe_system_file: skipping file -> $1"
+			$LT3 "I: ASLIB wipe_system_file: SKIPPING..... -> $1"
 	fi
 }
 
@@ -47,7 +44,7 @@ extract_zip() {
 		$LT4 "D: ASLIB extract_zip: fatal error cannot determine zip size"
 	}
 	
-	est_time=$(($pc_size_zip/1024/20))
+	est_time=$(($pc_size_zip/1000/10))
 	
 	$LT4 "D: ASLIB extract_zip: Zip Size -> $pc_size_zip"
 	$LT4 "D: ASLIB extract_zip: Est Time -> $est_time"
@@ -67,34 +64,31 @@ install_app_lib(){
 	$LT4 "D: ASLIB install_app_lib: Processing AppLib using $ABI, $LIB, $VENDORLIB"
 	unzip -o "$TARGET" "lib/$ABI/*" -d "$TMPLIB" && {
 		for SO in $(ls $TMPLIB/lib/$ABI); do
-			TMP_SO="$TMPLIB/lib/$ABI/$SO";
-			VEN_SO="$VENDORLIB/$SO";
-			APP_SO="$SYSTEMPATH/lib/$LIB/$SO"
+			TMP_SO="$TMPLIB/lib/$ABI/$SO";VEN_SO="$VENDORLIB/$SO";APP_SO="$SYSTEMPATH/lib/$LIB/$SO"
 			if [ -e $VEN_SO ];then
 				cmp -s "$TMPLIB/lib/$ABI/$SO" "$VENDORLIB/$SO" >/dev/null 2>&1 && {
-					$LT4 "I: ASLIB install_app_lib: Linking in APP DIR, a same version exist in $VENDORLIB - $SO "
-					install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
+					$LT4 "D: ASLIB install_app_lib: Linking in APP DIR, a same version exist in $VENDORLIB - $SO "
+					install_LnkFile "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
 					file_list "${VEN_SO#/system/}"
 				} || {
-					$LT4 "I: ASLIB install_app_lib: Installing in APP DIR, A different SO already exist in $VENDORLIB - $SO"
+					$LT4 "D: ASLIB install_app_lib: Installing in APP DIR, A different SO already exist in $VENDORLIB - $SO"
 					install -d "$SYSTEMPATH/lib/$LIB/"
 					dd if="$TMP_SO" of="$APP_SO"
 					set_system_fp "$APP_SO";
 					file_list "${APP_SO#/system/}"
 				}
 			else
-				$LT4 "I: ASLIB install_app_lib: Installing in $VENDORLIB - $SO"
+				$LT4 "D: ASLIB install_app_lib: Installing in $VENDORLIB - $SO"
 				dd if="$TMP_SO" of="$VEN_SO"
 				set_system_fp "$VEN_SO";
 				file_list "${VEN_SO#/system/}"
-				$LT4 "I: ASLIB install_app_lib: Linking $SO to APP DIR."
-				install_link_file "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
+				$LT4 "D: ASLIB install_app_lib: Linking $SO to APP DIR."
+				install_LnkFile "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
 			fi
 		done
 		# Clean TMPLIB
 		rm -rf $TMPLIB/*
-	} || $LT4 "I: ASLIB install_app_lib: Error in extracting lib from $TARGET"
-
+	} || $LT3 "E: ASLIB install_app_lib: Error in extracting lib from $TARGET"
 }
 
 install_file(){
@@ -106,7 +100,7 @@ install_file(){
 	}
 }
 
-install_link_file() {
+install_LnkFile() {
 	[ ! -e "$1" ] && {
 		install -d "$1"
 		for L in $(find "$2" -type d);do
@@ -114,10 +108,8 @@ install_link_file() {
 		done
 	}
 	ln -sfn "$3" "$4" &&\
-	$LT4 "I: ASLIB install_link_file: LINKED $VENDORLIB TO $4" ||\
-	$LT4 "E: ASLIB install_link_file: FAILED TO LINK"
-	#eval echo "install -d \\\"$1\\\""	>> $link_list
-	#eval echo "find \\\"$2\\\" -type d -exec chmod 755 {} +\;"	>> $link_list
+	$LT4 "D: ASLIB install_LnkFile: LINKED FROM ${3#/system/} TO ${4#/system/}" ||\
+	$LT3 "E: ASLIB install_LnkFile: FAILED TO LINK"
 	eval echo "$3 $4"	>> $link_list
 }
 

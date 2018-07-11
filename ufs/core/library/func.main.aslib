@@ -98,17 +98,22 @@ asAddon() {
 	
 	# sed the wipelist to addon_tail
 	$LT2 "I: ASLIB asAddon: injecting wipe list to $addon_tail"
-	for _wipe_file in $(tac $wipe_list); do
+	local IFS=$'\n'
+	for _wipe_file in $(cat $wipe_list); do
 		sed -i "\:wipe_list=:a$_wipe_file" $addon_tail
 		$LT3 "D: ASLIB asAddon: <- $_wipe_file"
 	done
 	
+	# fix link_list
+	$LT4 "I: ASLIB asAddon: fixing link_list"
+	echo "$(cat $link_list | sort -ur | sed '/^ *$/d')" > $link_list
+	
 	# inject the linkfile
 	$LT2 "I: ASLIB asAddon: injecting link list to $addon_tail"
 	local IFS=$'\n'
-	for L in $(tac $link_list); do
+	for link_list in $(cat $link_list); do
 		sed -i "\:#list_link_guide:a$L" $addon_tail
-		$LT3 "D: ASLIB asAddon: <- $L"
+		$LT3 "D: ASLIB asAddon: <- $link_list"
 	done
 
 	# set addon properties
@@ -201,16 +206,15 @@ asInstall() {
 	#
 	# INSTALL APP LIB
 	#
-	# Get Current ABI
 	
-	is_enabled aslib_asInstall_ow && aslib_overwrite=true || aslib_overwrite=false
+	local al_ow=;
+	is_enabled aslib_asInstall_ow && al_ow=true || al_ow=false
 	
-	export TMPLIB=/sdcard/tmplib
-	[ ! -e "$TMPLIB" ] && install -d "$TMPLIB"
+	export TMPLIB=/sdcard/tmplib && [ ! -e "$TMPLIB" ] && install -d "$TMPLIB"
 	
 	INSLIB=true
 	export RO_ABI=;export ABI=;export LIB=;export VENDORLIB=;
-	ABILIST="$(get_prop ro.product.cpu.abilist)"
+	local ABILIST="$(get_prop ro.product.cpu.abilist)"
 	[ -n "$ABILIST" ] && {
 		case $ABILIST in
 			*arm64-v8a*)
@@ -234,11 +238,13 @@ asInstall() {
 		$LT4 "E: ASLIB asInstall: UNABLE TO GET abilist"
 		INSLIB=false
 	}
+	
+	## < ---- DISPLAY SYSTEM ARCH ---- >
 	RO_ABI=$ABI
 	$LT4 "D: ASLIB asInstall: ABI       -> $ABI"
 	$LT4 "D: ASLIB asInstall: LIB       -> $LIB"
 	$LT4 "D: ASLIB asInstall: VENDORLIB -> $VENDORLIB"
-	
+	## < ----         END         ---- >
 	
 	# install files
 	for TARGET in $(find $SOURCESYS | sort); do
@@ -253,49 +259,53 @@ asInstall() {
 				_old_install="$_new_install"
 			}
 			[ ! -e "$FILE" ] && {
-					install -d "$FILE" || $LT4 "E: ASLIB asInstall: Failed to create $FILE" && \
+					install -d "$FILE" || $LT3 "E: ASLIB asInstall: Failed to create $FILE" && \
 					set_perm 0 0 0755 "$FILE"
 			}
 		else
 			SYSTEMINST="$(echo "$FILE" | cut -d/ -f 3-3)";SYSTEMPATH="$(echo "$FILE" | cut -d/ -f 1-4)";
 			echo "$FILE" | grep -m1 apk >/dev/null && [[ "$INSLIB" == "true" && "$SYSTEMINST" == "app" || "$SYSTEMINST" == "priv-app" ]] && {
-				$LT4 "I: ASLIB asInstall: unzipping.. $TARGETAPP"
+				$LT4 "D: ASLIB asInstall: unzipping.. $TARGETAPP"
 				# Reset INSTALL
 				INSTALL=false
-				TARGET_LIST="$(unzip -l $TARGET)"
-				[ "$RO_ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
-					ABI="arm64-v8a";LIB="arm64";VENDORLIB="/system/vendor/lib64"
-					install_app_lib && INSTALL=true; 
-				} || {
-					$LT4 "I: ASLIB asInstall: $TARGET has no arm64-v8a library. trying armeabi-v7a"
-					ABI="armeabi-v7a";LIB="arm";VENDORLIB="/system/vendor/lib"
-					(echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
-						install_app_lib && INSTALL=true;
+				TARGET_LIST="$(unzip -l $TARGET | grep lib/)" && (echo "$TARGET_LIST" | grep -m 1 "lib/" >/dev/null 2>&1) && {
+					[ "$RO_ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
+						ABI="arm64-v8a";LIB="arm64";VENDORLIB="/system/vendor/lib64"
+						install_app_lib && INSTALL=true; 
 					} || {
-						$LT4 "I: ASLIB asInstall: $TARGET has no armeabi-v7a library. trying armeabi"
-						ABI="armeabi";
+						$LT4 "D: ASLIB asInstall: $TARGET has no arm64-v8a library. trying armeabi-v7a"
+						ABI="armeabi-v7a";LIB="arm";VENDORLIB="/system/vendor/lib"
 						(echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
 							install_app_lib && INSTALL=true;
-						} || $LT4 "I: ASLIB asInstall: $TARGET has no package lib"
+						} || {
+							$LT4 "D: ASLIB asInstall: $TARGET has no armeabi-v7a library. trying armeabi"
+							ABI="armeabi";
+							(echo "$TARGET_LIST" | grep -m 1 "lib/$ABI" >/dev/null) && {
+								install_app_lib && INSTALL=true;
+							} || $LT4 "E: ASLIB asInstall: We did not detect $TARGETAPP's library files, strange..."
+						}
 					}
-				}
+				} || $LT4 "D: ASLIB asInstall: $TARGET has no package lib"
 				
 				[ "$INSTALL" == "false" ] && {
 					# lets check if a lib is defined in its directory lets copy that.
 					AD="$(dirname $TARGET)/lib"
 					[ -e "$AD" ] && {
-						$LT4 "I: ASLIB asInstall: $TARGET has included library. installing.."
+						$LT4 "D: ASLIB asInstall: $TARGET has included library. installing.."
+						local RnO=false;
 						for L in $(find $AD -name *.so);do
-							F="$SYSTEMPATH/lib${L#$AD}"
-							install -d "$(dirname $L)"
-							for L in $(find "$SYSTEMPATH" -type d); do
-								set_perm 0 0 0755 $L
-							done
-							#eval echo 'find "$SYSTEMPATH" -type d -exec chmod 755 {} +\;'>> $link_list
-							$LT4 "I: ASLIB asInstall: installing so file to $F"
+							local F="$SYSTEMPATH/lib${L#$AD}"
+							[ "$RnO" == "false" ] && {
+								local DN="$(dirname $L)"
+								install -d "$DN" && $LT4 "D: ASLIB asInstall: created directory $DN"
+								for L in $(find "$SYSTEMPATH" -type d); do
+									set_perm 0 0 0755 $L
+								done
+								RnO=true;
+							}
+							$LT4 "D: ASLIB asInstall: installing so file to $F"
 							dd if="$L" of="$F"
 							set_perm 0 0 0644 "$F"
-							#file_list="${file_list}${F#/system/}"$'\n';
 							file_list "${F#/system/}"
 						done
 					}
@@ -311,13 +321,13 @@ asInstall() {
 					$LT4 "W: ASLIB asInstall: $FILE already exist. "
 					# check if the file is the same if yes just ignore it
 					(cmp -s "$TARGET" "$FILE" >/dev/null 2>&1) && {
-						$LT4 "I: ASLIB asInstall: The file are the same, ignoring install"
+						$LT4 "D: ASLIB asInstall: IGNORING,  The file are the same."
 						file_list "${FILE#/system/}" # if it exist lets preserve it also.
 					} || {
-						[ "$aslib_overwrite" == "true" ] && {
-							$LT4 "I: ASLIB asInstall: install overwrite enabled, overwriting $FILE"
+						[ "$al_ow" == "true" ] && {
+							$LT4 "D: ASLIB asInstall: OVERWRITE, overwrite enabled. overwriting $FILE"
 							install_file;
-						} || $LT4 "W: ASLIB asInstall: asInstall is not allowed to overwrite the file, ignoring"
+						} || $LT4 "W: ASLIB asInstall: IGNORING,  we are not allowed to overwrite the file."
 					} 
 				else
 					install_file

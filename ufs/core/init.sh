@@ -41,17 +41,17 @@ cold_log() {
 flush_log(){
 	cold_log "I: INIT.SH: Flushing TMP_LOG"
 	cold_log "I: INIT.SH: Flushing DONE!!"
-	uFS_TL=/sdcard/logs/devlogs/flush_$uFS_name.log
+	uFS_TL=/sdcard/logs/.devlogs/flush_$uFS_name.log
 	echo $'\n\n\n'"FLUSH LOG $(date)"$'\n' >> $uFS_TL
 	cat  "$TMP_LOG"                        >> $uFS_TL
 	echo $'\n'"DONE..."$'\n\n'             >> $uFS_TL
 }
 
 INIT_TMP_LOG() {
-	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	export TMP_LOG=/sdcard/logs/.devlogs/tmp_log
 	# Create Directory
 	[ ! -e "$TMP_LOG" ] && {
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		export INIT_TMP_LOG=true
 		echo $'\n'"TMP_LOG INIT BY INIT.SH"$'\n' > $TMP_LOG
 	}
@@ -106,33 +106,30 @@ ERR=0
 
 ASLIB=$LIBS/aslib
 $cold_log "I: INIT.SH: LOADING $ASLIB"
-(. $ASLIB >/dev/null 2>&1) && \
-. $ASLIB || {
+command . $ASLIB || {
 	ui_print "E: ERROR $E_ANL: aslib is not loadable!!"
 	abort $E_ANL
 }
 
 # LOAD UFS CONFIGS
-ER_CODE=$COREDIR/config/er_code
-UFSCONFIG=$COREDIR/config/ufsconfig
-for config in $ER_CODE $UFSCONFIG; do
-	$cold_log "I: INIT.SH: LOADING $config"
-	(. $config >/dev/null 2>&1) && \
-	. $config  || \
+CONFLIST="er_code ufsconfig"
+CONFGDIR="$COREDIR/config"
+for CF in $CONFLIST; do
+	$cold_log "I: INIT.SH: LOADING $CF"
+	command . $CONFGDIR/$CF  || \
 	$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
 done
 
 # LOAD USER CONFIGS
-USERCONFIG=$COREDIR/install/config 
-USER_INSTALLSH=$COREDIR/install/install.sh 
-( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && \
-for config in $USERCONFIG $USER_INSTALLSH; do
-	$cold_log "I: INIT.SH: LOADING $config"
-	(. $config >/dev/null 2>&1) && \
-	. $config  || \
-	$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
-done || \
-cold_log "W: INIT.SH: UNABLE TO UNZIP USER CONFIGS"
+U_CONFLIST="config install.sh "
+U_CONFGDIR="$COREDIR/install"
+( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && {
+	for CF in $U_CONFLIST; do
+		$cold_log "I: INIT.SH: LOADING $CF"
+		command . $U_CONFGDIR/$CF  || \
+		$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
+	done 
+} || cold_log "W: INIT.SH: UNABLE TO UNZIP USER CONFIGS"
 
 # SETUP ASLIB
 alLSet type 	$aslib_log_type        # FLASH TYPE
@@ -171,7 +168,7 @@ CORE_INSTALLERSH=$COREDIR/installer.sh
 
 # HANDLE FLUSH_LOG ON ERROR
 [ "$INSTL_ERR" -ne "0" ] && {
-	$cold_log "E: INIT.SH: Error Executing installer.sh, Check /sdcard/logs/devlogs"
+	$cold_log "E: INIT.SH: Error Executing installer.sh, Check /sdcard/logs/.devlogs"
 	flush_log
 }
 

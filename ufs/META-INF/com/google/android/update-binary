@@ -72,7 +72,7 @@ exit_() {
 }
 
 fd_log(){
-	devlogs=/sdcard/logs/devlogs
+	devlogs=/sdcard/logs/.devlogs
 	[ ! -e $devlogs ] && install -d $devlogs
 	(printf $'\n\n\n\n'"BEGIN RECOVERY TAIL LOGS"$'\n\n';tail -fq /tmp/recovery.log >> $devlogs/recovery.log & echo $! >/tmp/TLPID)&	
 }
@@ -84,10 +84,10 @@ kill_tail_recovery(){
 }
 
 INIT_TMP_LOG() {
-	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	export TMP_LOG=/sdcard/logs/.devlogs/tmp_log
 	# Create Directory
 	[ ! -e "$TMP_LOG" ] && {
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		export INIT_TMP_LOG=true
 		echo $'\n'"TMP_LOG INIT BY UPDATE-BINARY"$'\n' > $TMP_LOG
 	}

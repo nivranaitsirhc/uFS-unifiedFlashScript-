@@ -6,8 +6,8 @@
 ##### ASLIB.UI_PRINT.INIT_FD
 init_fd(){
 	for FD in `ls /proc/$$/fd`; do
-		readlink /proc/$$/fd/$FD 2>/dev/null | grep -m 1 pipe >/dev/null && {
-		  ps | grep " 3 $FD " | grep -v -m 1 grep >/dev/null && {
+		(readlink /proc/$$/fd/$FD 2>/dev/null | grep -m 1 pipe >/dev/null) && {
+		  (ps | grep " 3 $FD " | grep -v -m 1 grep >/dev/null) && {
 			OUTFD=$FD
 			break
 		  }
@@ -41,12 +41,12 @@ progress() {
 print_header(){
 	[ -z "$OUTFD" ] && init_fd
 	
-	set=0;tmh_init=false;
+	set=0;local tmh_init=false;
 
 	#[ -z "$TMH0" ] && set=$((++set))
 
 	while true;do
-		eval val='$'TMH${set}
+		eval val='$'TMH$set
 		if [ "$val" == "#" ];then
 			ui_print " "
 		elif [ -n "$val" ]; then

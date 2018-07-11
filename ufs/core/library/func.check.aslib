@@ -186,7 +186,7 @@ def_config_check() {
 	$LT2 "I: ASLIB def_config_check: checking aslib configs"
 	$LT3 "D: ASLIB def_config_check: last loaded config  ## $last_config_loaded ##"
 	for CONF in $def_config_list; do 
-		eval CONFVAL='$'${CONF}
+		eval CONFVAL='$'$CONF
 		[ -n "$CONFVAL" ] && {
 			$LT3 "D: ASLIB def_config_check: curConfig: $(printf "%-20s %s\n" $CONF "-> $CONFVAL")"
 		} || {
@@ -196,7 +196,7 @@ def_config_check() {
 				$LT3 "D: ASLIB def_config_check: ufsConfig: $(printf "%-20s %s\n" $CONF "-> ${GVAL}")"
 			} || {
 				$LT3 "W: ASLIB def_config_check: $CONF is not defined in $loc_of_config, trying default."
-				grep -m 1 "$CONF=" "$loc_of_aslib" 2>&1 >/dev/null && {
+				(grep -m 1 "$CONF=" "$loc_of_aslib" 2>&1 >/dev/null) && {
 					GVAL=$(get_file_prop $loc_of_aslib $CONF)
 					[ -n "$GVAL" ] && {
 						eval $CONF="${GVAL}"

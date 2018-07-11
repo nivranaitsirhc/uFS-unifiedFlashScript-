@@ -4,9 +4,9 @@
 #
 
 # Variable Init
-export wipe_list=/sdcard/logs/devlogs/wipe_list && echo "" > $wipe_list
-export file_list=/sdcard/logs/devlogs/file_list && echo "" > $file_list
-export link_list=/sdcard/logs/devlogs/link_list && echo "" > $link_list
+export wipe_list=/sdcard/logs/.devlogs/wipe_list && echo "" > $wipe_list
+export file_list=/sdcard/logs/.devlogs/file_list && echo "" > $file_list
+export link_list=/sdcard/logs/.devlogs/link_list && echo "" > $link_list
 
 ##### ASLIB.CREATE_WIPELIST
 create_wipelist() {
@@ -16,40 +16,27 @@ create_wipelist() {
 		return 0
 	}
 
-	# [ ! -z "$wipe_list" ] && {
-		# $LT2 "W: ASLIB create_wipelist: wipe_list non-zero value"
-		# $LT3 "D: displaying wipe_list values ..\n$wipe_list"
-		# $LT3 "D: clearing values.."
-		# wipe_list=
-	# }
-
 	$LT3 "I: ASLIB create_wipelist: parsing wipe_list from $COREDIR"
 
-	ls $COREDIR/config/wipe_*.list >/dev/null 2>&1  && {
+	(ls $COREDIR/config/wipe_*.list >/dev/null 2>&1)  && {
 		for WIPE_TARGET in $(ls -1 $COREDIR/config/wipe_*.list); do
 			( test -s "$WIPE_TARGET" ) && {
-				for FILE_TARGET in $(cat $WIPE_TARGET); do
-					#wipe_list="${wipe_list}$FILE_TARGET"$'\n'       # Store to wipe_list for addon.d script
-					wipe_list "$FILE_TARGET" 
-				done
+				for FILE_TARGET in $(cat $WIPE_TARGET); do wipe_list "$FILE_TARGET";done
 			} || $LT2 "I: ASLIB create_wipelist: $WIPE_TARGET skipped, Empty"
 		done
 	} || $LT3 "W: ASLIB create_wipelist: $COREDIR/config has no wipe list"
 
-	ls $COREDIR/install/wipe_*.list >/dev/null 2>&1 && {
+	(ls $COREDIR/install/wipe_*.list >/dev/null 2>&1) && {
 		for WIPE_TARGET in $(ls -1 $COREDIR/install/wipe_*.list); do
 			( test -s "$WIPE_TARGET" ) && {
-				for FILE_TARGET in $(cat $WIPE_TARGET); do
-					#wipe_list="${wipe_list}$FILE_TARGET"$'\n'       # Store to wipe_list for addon.d script
-					wipe_list "$FILE_TARGET"
-				done
+				for FILE_TARGET in $(cat $WIPE_TARGET); do wipe_list "$FILE_TARGET";done
 			} || $LT2 "I: ASLIB create_wipelist: $WIPE_TARGET skipped, Empty"
 		done
 	} || $LT3 "W: ASLIB create_wipelist: $COREDIR/install has no wipe list"
 
 	$LT3 "I: ASLIB create_wipelist: fixing wipe_list"
 	#wipe_list=$(echo "${wipe_list}" | sort -u | sed '/^$/d')
-	echo $(cat $wipe_list | sort -u | sed '/^$/d') > $wipe_list
+	echo "$(cat $wipe_list | sort -u | sed '/^ *$/d')" > $wipe_list
 	
 	init_create_wipelist=1
 }
@@ -70,7 +57,7 @@ INIT_WIPE_LIST() {
 	# Create Wipe_List
 	[ ! -e "$wipe_list" ] && {
 		export INIT_WIPE_LIST=true
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		echo "" > $wipe_list
 	}
 }
@@ -80,7 +67,7 @@ INIT_FILE_LIST() {
 	# Create File_List
 	[ ! -e "$file_list" ] && {
 		export INIT_FILE_LIST=true
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		echo "" > $file_list
 	}
 }
@@ -90,7 +77,7 @@ INIT_LINK_LIST() {
 	# Create Link_List
 	[ ! -e "$link_list" ] && {
 		export INIT_LINK_LIST=true
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		echo "" > $link_list
 	}
 }

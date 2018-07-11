@@ -90,7 +90,7 @@ export flush_logs=1
 export cold_log=cold_log
 
 # ASLIB GET_PROP CONFIGS
-PROPFILES="/system/default.prop /system/build.prop /data/local.prop /default.prop /build.prop"
+export PROPFILES="/system/default.prop /system/build.prop /data/local.prop /default.prop /build.prop"
 
 # ASLIB DEF_CONFIG_CHECK
 loc_of_config=                   # MUST BE DEFINED BY INSTALLER SH or def_config_check() will be disabled
@@ -165,10 +165,10 @@ cold_log() {
 
 
 INIT_TMP_LOG() {
-	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	export TMP_LOG=/sdcard/logs/.devlogs/tmp_log
 	# Create Directory
 	[ ! -e "$TMP_LOG" ] && {
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		export INIT_TMP_LOG=true
 		echo $'\n'"TMP_LOG INIT BY UPDATE-BINARY"$'\n' > $TMP_LOG
 	}
@@ -195,7 +195,7 @@ for func in $(ls $LIBS/func.*.aslib);do
 	$cold_log "I: LOADING $func"
 	[ -e $func ] && \
 	command . $func && \
-	$cold_log "I: ASLIB LOADED $func" || {
+	$cold_log "I: ASLIB LOADED" || {
 	$cold_log "E: FUNCTION UNLOADABLE"
 	}
 done

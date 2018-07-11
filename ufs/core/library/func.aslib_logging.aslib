@@ -55,14 +55,14 @@ alLInit() {
 	logfile=$logpath/$al_name'_'$(date "+%Y-%m-%d_%H-%M-%S").log
 	$cold_log "I: ASLIB alLInit: logfile set to $logfile"
 	
-	if [ -e $logfile ]; then
+	[ -e $logfile ] && {
 		$cold_log "W: ASLIB alLInit: found existing logfile with the same name, the world must be crazy!"
 		$cold_log "D: ASLIB alLInit: removing duplicate logfile.."
 		rm -f $logfile
-	fi
+	}
 	
-	# COLD_LOG TURN-OVER
-	cat "$TMP_LOG"	>	$logfile	# COPY TMP_LOG TO LOG FILE
+	# COLD_LOG TURN-OVER			
+	(cat "$TMP_LOG" >> $logfile)	# COPY TMP_LOG TO ALLOG
 	cold_log=alLog					# TRANSITION COLD_LOG TO ALLOG
 	
 	al_init=1
@@ -188,10 +188,10 @@ cold_log() {
 
 ##### ASLIB.TMP_LOG
 INIT_TMP_LOG() {
-	export TMP_LOG=/sdcard/logs/devlogs/tmp_log
+	export TMP_LOG=/sdcard/logs/.devlogs/tmp_log
 	# Create Directory
 	[ ! -e "$TMP_LOG" ] && {
-		install -d /sdcard/logs/devlogs
+		install -d /sdcard/logs/.devlogs
 		export INIT_TMP_LOG=true
 		echo $'\n'"TMP_LOG INIT BY ASLIB_LOGGING"$'\n' > $TMP_LOG
 	}
