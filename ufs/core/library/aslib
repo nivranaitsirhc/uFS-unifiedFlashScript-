@@ -191,11 +191,11 @@ cold_log=cold_log
 
 # LOAD ALL FUNCTIONS
 $cold_log "I: ASLIB LOADING LIBRARIES"
-for func in $(ls $LIBS/func.*.aslib);do
-	$cold_log "I: LOADING $func"
+for func in $(find $LIBS -type file -name func.*.aslib);do
+	$cold_log "I: LOADING ${func#$LIBS}"
 	[ -e $func ] && \
 	command . $func && \
-	$cold_log "I: ASLIB LOADED" || {
+	$cold_log "I: LOADED!" || {
 	$cold_log "E: FUNCTION UNLOADABLE"
 	}
 done
