@@ -115,9 +115,8 @@ command . $ASLIB || {
 CONFLIST="er_code ufsconfig"
 CONFGDIR="$COREDIR/config"
 for CF in $CONFLIST; do
-	$cold_log "I: INIT.SH: LOADING $CF"
-	command . $CONFGDIR/$CF  || \
-	$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
+	command . $CONFGDIR/$CF && LM="LOADED" || LM="UNABLE TO LOAD"
+	$cold_log "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
 done
 
 # LOAD USER CONFIGS
@@ -125,9 +124,8 @@ U_CONFLIST="config install.sh "
 U_CONFGDIR="$COREDIR/install"
 ( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && {
 	for CF in $U_CONFLIST; do
-		$cold_log "I: INIT.SH: LOADING $CF"
-		command . $U_CONFGDIR/$CF  || \
-		$cold_log "E: INIT.SH: INTEGRITY UNABLE TO LOAD"
+		command . $U_CONFGDIR/$CF && LM="LOADED" || LM="UNABLE TO LOAD"
+		$cold_log "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
 	done 
 } || cold_log "W: INIT.SH: UNABLE TO UNZIP USER CONFIGS"
 

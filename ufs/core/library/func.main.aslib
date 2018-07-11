@@ -89,7 +89,10 @@ asAddon() {
 	$LT2 "I: ASLIB asAddon: injecting install list to $addon_tail"
 	for _file_list in $(cat $file_list); do
 		sed -i "\:#list_file_guide:a$_file_list" $addon_tail
-		$LT3 "D: ASLIB asAddon: <- $_file_list"
+		$LT3 "D: ASLIB asAddon: <- $_file_list" || {
+		$LT3 "E: ASLIB asAddon: Unable to Inject Link List to $addon_tail. Missing guide!"
+		break;
+		}
 	done
 	
 	# fix wipe_list
@@ -101,7 +104,10 @@ asAddon() {
 	local IFS=$'\n'
 	for _wipe_file in $(cat $wipe_list); do
 		sed -i "\:wipe_list=:a$_wipe_file" $addon_tail
-		$LT3 "D: ASLIB asAddon: <- $_wipe_file"
+		$LT3 "D: ASLIB asAddon: <- $_wipe_file" || {
+		$LT3 "E: ASLIB asAddon: Unable to Inject Wipe List to $addon_tail. Missing guide!"
+		break;
+		}
 	done
 	
 	# fix link_list
@@ -112,8 +118,11 @@ asAddon() {
 	$LT2 "I: ASLIB asAddon: injecting link list to $addon_tail"
 	local IFS=$'\n'
 	for link_list in $(cat $link_list); do
-		sed -i "\:#list_link_guide:a$L" $addon_tail
-		$LT3 "D: ASLIB asAddon: <- $link_list"
+		sed -i "\:#list_link_guide:a$L" $addon_tail && \
+		$LT3 "D: ASLIB asAddon: <- $link_list" || {
+		$LT3 "E: ASLIB asAddon: Unable to Inject Link List to $addon_tail. Missing guide!"
+		break;
+		}
 	done
 
 	# set addon properties

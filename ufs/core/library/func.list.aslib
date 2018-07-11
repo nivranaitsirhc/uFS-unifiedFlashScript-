@@ -35,7 +35,6 @@ create_wipelist() {
 	} || $LT3 "W: ASLIB create_wipelist: $COREDIR/install has no wipe list"
 
 	$LT3 "I: ASLIB create_wipelist: fixing wipe_list"
-	#wipe_list=$(echo "${wipe_list}" | sort -u | sed '/^$/d')
 	echo "$(cat $wipe_list | sort -u | sed '/^ *$/d')" > $wipe_list
 	
 	init_create_wipelist=1
