@@ -40,15 +40,26 @@ ASLIB_CLEAR "YOUR_PATH"
 # input3		-> chmod setup	!--important--!
 # input4		-> target_file	!--important--!
 set_perm() {
-	$LT2 "I: ASLIB set_perm: setting permission $1 - $2 $3 $4 $5"
-	[[ -n "$1" && -n "$2" && -n "$3" && -n "$4" ]] && {
-		chown "$1.$2" "$4"	||\
-		chown "$1:$2" "$4"	&&\
-		chmod "$3" "$4"		&&\
-		[ ! -d "$4" ] && ch_con "$4"
-	}
-	#[ ! -z "$5" ] && ch_con_ext "$4" "$5"
-	# Forced Return 0
+	# parse
+	local u="0";local g="0";local m="0755";local D="$5";local P="u:object_r:system_file:s0";
+	if   [[ -z "$5" && -z "$2" ]];then
+		D="$1"					# assuming one input
+	elif [[ -z "$4" && -n "$3" ]];then
+		D="$3";u="$1";g="$2"	# assuming chown input
+	elif [[ -z "$3" && "$1" == "${1/object_r/}" ]];then
+		D="$2";m="$1";			# assuming mode input
+	elif [[ -z "$3" && "$1" != "${1/object_r/}" ]];then
+		D="$2";P="$1"			# context input
+	elif [[ -z "$5" && -e "$4" && "$3" == "${3/object_r/}" ]];then
+		D="$4";u="$1";g="$2";m="$3";
+	else
+		D="$5";u="$1";g="$2";m="$3";P="$4"
+	fi
+	$LT2 "I: ASLIB set_perm: setting permission $u - $g $m $P $D"
+	chown "$u.$g" "$D"	||\
+	chown "$u:$g" "$D"	
+	chmod "$m" "$D"		
+	ch_con_ext "$P" "$D"
 	return 0
 }
 
@@ -152,6 +163,21 @@ copy_fsp(){
 			# }
 		# }
 	}
+}
+
+# INIT SCRIPT
+# --------------------------------------------------------------------------------
+# I: INITIALIZE your library
+
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init_DUMMY_LIBRARY(){
+	return 0
 }
 
 # ASLIB RETURN CONFIRMATION

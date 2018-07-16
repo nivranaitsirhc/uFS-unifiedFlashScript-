@@ -205,8 +205,23 @@ INIT_TMP_LOG() {
 	}
 }
 
-# START TMP_LOG
-if [ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ];then  INIT_TMP_LOG;fi
+
+# INIT SCRIPT
+# --------------------------------------------------------------------------------
+# I: INITIALIZE your library
+
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init__logging(){
+	# START TMP_LOG
+	if [ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ];then  INIT_TMP_LOG;fi
+	return 0
+}
 
 # ASLIB RETURN CONFIRMATION
 # --------------------------------------------------------------------------------

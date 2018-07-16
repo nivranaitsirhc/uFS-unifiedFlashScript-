@@ -184,15 +184,20 @@ ASLIB_CLEAR(){
 ##### ASLIB_LOADLIB
 ASLIB_LOADLIB(){
 	$ColdLog "I: ASLIB LOADER: Loading Libraries"
-	local LM=;
+	local LM=;L_LIST=;
 	for func in $(find $ASLIB_LIBDP -type f -name func.*.aslib);do
-		local AS_SCRIPT=`basename $func`;local LIBNAME="$(echo $AS_SCRIPT | cut -d. -f 2-2)";
+		local AS_SCRIPT=`basename $func`;local LIBNAME="$(echo $AS_SCRIPT | cut -d. -f 2-2)";L_LIST="$L_LIST$LIBNAME"$'\n'
 		[ -e "$func" ] && \
 		command . $func && \
 		LM="LOADED" || {
 		LM="LIBRARY UNLOADABLE"
 		}
 		$ColdLog "I: ASLIB LOADER: LOADING $(printf "%-35s %s\n" "$LIBNAME..." "$LM")"
+	done
+	
+	$ColdLog "I: ASLIB LOADER: Initializing libraries"
+	for L in $L_LIST;do
+		init_$L >/dev/null 2>&1 || echo "Warning no properly defined init function, check $L"
 	done
 }
 

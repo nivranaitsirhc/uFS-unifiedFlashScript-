@@ -87,6 +87,17 @@ set_file_prop() {
 # --------------------------------------------------------------------------------
 # I: INITIALIZE your library
 
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init_DUMMY_LIBRARY(){
+	return 0
+}
+
 # check if PROPFILES is defined
 [ -z "$PROPFILES" ] && \
 export PROPFILES="/system/default.prop /system/build.prop /data/local.prop /default.prop /build.prop"

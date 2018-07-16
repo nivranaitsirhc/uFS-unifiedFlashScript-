@@ -121,8 +121,18 @@ clear_list() {
 # --------------------------------------------------------------------------------
 # I: INITIALIZE your library
 
-if [ -z "$INIT_FILE_LIST" ] || [ "$INIT_FILE_LIST" -ne "true" ];then INIT_FILE_LIST;fi
-if [ -z "$INIT_WIPE_LIST" ] || [ "$INIT_WIPE_LIST" -ne "true" ];then INIT_WIPE_LIST;fi
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init_ufs_install_list(){
+	if [ -z "$INIT_FILE_LIST" ] || [ "$INIT_FILE_LIST" -ne "true" ];then INIT_FILE_LIST;fi
+	if [ -z "$INIT_WIPE_LIST" ] || [ "$INIT_WIPE_LIST" -ne "true" ];then INIT_WIPE_LIST;fi
+	return 0
+}
 
 # ASLIB RETURN CONFIRMATION
 # --------------------------------------------------------------------------------

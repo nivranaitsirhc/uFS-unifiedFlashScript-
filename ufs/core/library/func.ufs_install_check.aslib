@@ -249,6 +249,21 @@ def_config_check() {
 	} || return 0
 }
 
+# INIT SCRIPT
+# --------------------------------------------------------------------------------
+# I: INITIALIZE your library
+
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init_DUMMY_LIBRARY(){
+	return 0
+}
+
 # ASLIB RETURN CONFIRMATION
 # --------------------------------------------------------------------------------
 # 
