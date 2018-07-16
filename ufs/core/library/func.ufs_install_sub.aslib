@@ -29,6 +29,8 @@ ASLIB_CLEAR "YOUR_PATH"
 # I: INIT your variables here. avoid exporting your variables here. add it in the
 #    aslib loader.
 
+export pub_lib_txt_list=;
+
 
 # FUNCTIONS
 # --------------------------------------------------------------------------------
@@ -117,6 +119,35 @@ install_app_lib(){
 	} || $LT3 "E: ASLIB install_app_lib: Error in extracting lib from $TARGET"
 }
 
+
+install_app_lib_update_vendor_pub_lib_list(){
+	# Android 8.0 requires to add all vendor library to /sysem/etc/public.libraries.txt
+	
+	# < quote >
+	# In addition to standard public native libraries,
+	# vendors may choose to provide additional native libraries accessible to apps 
+	# by putting them under the /vendor library folder (/vendor/lib for 32 bit libraries and,
+	# /vendor/lib64 for 64 bit) and listing them in: /vendor/etc/public.libraries.txt
+	# < end quote >
+	
+	local pub_lib_txt=/system/vendor/etc/public.libraries.txt;
+	[ ! -e "$pub_lib_txt" ] && {
+		# let create our own list
+		$LT4 "I: ASLIB install_app_lib_update_vendor_pub_lib_list: Generating public.libraries.txt"
+		printf "# ufs generated public.libraries.txt\n" > $pub_lib_txt
+		set_perm 0 0 0644 $pub_lib_txt
+	}
+	# clean pub_lib_txt_list
+	pub_lib_txt_list="$(echo $pub_lib_txt_list | sort -ur | sed '/^ *$/d')"
+	
+	# lets append the list
+	for L in $pub_lib_txt_list;do
+		$LT4 "I: ASLIB install_app_lib_update_vendor_pub_lib_list: adding $L public.libraries.txt"
+		printf "$L\n" >> $pub_lib_txt
+	done
+}
+
+
 ###### ASLIB.INSTALL_FILE
 install_file(){
 	# asInstall sub
@@ -138,7 +169,22 @@ install_LnkFile() {
 
 ###### ASLIB.INSTALL_APP_SYS
 install_app_lib_sys(){
-	local D=`dirname $2`;local B=`basename $2`;local P="u:object_r:system_file:s0"
+	local D=`dirname $2`;local B=`basename $2`;local
+	# < quote >
+	# Starting from Android 8.0, vendor public libraries have the following additional restrictions and required setups:
+	# 
+	# The native library in vendor must be properly labeled so it can be accessible to apps. 
+	# If access is required by any apps (including third party apps),
+	# the library must be labeled as same_process_hal_file in a vendor-specific file_contexts file as follows:
+	# /vendor/lib(64)?/libnative.so u:object_r:same_process_hal_file:s0
+	# < end quote >
+	
+	[ "$ANDROID_SDK_VER" -ge "26" ] && {
+		P="u:object_r:same_process_hal_file:s0"
+	} || {
+		P="u:object_r:vendor_file:s0"
+	}
+	
 	mkdir_p "$D"
 	[ -e "$2" ] && {
 		$LT4 "W: ASLIB install_app_lib_sys: DELETING.. $B already exist in $D."
@@ -147,7 +193,7 @@ install_app_lib_sys(){
 	[[ ! -e "$2" || ! -f "$2" ]] && {
 		$LT4 "I: ASLIB install_app_lib_sys: installing $2"
 		{ cp "$1" "$2" || dd if="$1" of="$2" ;} && \
-		{ set_system_fp "$2"; file_list "${2#/system/}";} || \
+		{ set_perm 0 0  "$2"; file_list "${2#/system/}";pub_lib_txt_list="$pub_lib_txt$(basename $1)"$'\n';} || \
 		$LT3 "E: ASLIB install_app_lib_sys: unable to copy $1"
 	}
 	return 0
@@ -157,6 +203,21 @@ install_app_lib_sys(){
 # --------------------------------------------------------------------------------
 # I: INITIALIZE your library
 
+# Rename this function with format init_YOUR_LIBRARY_NAME as it will be run by aslib loader after
+# all the libraries are loaded. 
+# e.g.
+# your library					proper function init name	 
+# func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
+#
+
+init_ufs_install_sub(){
+	# get android SDK version
+	[ -z "$ANDROID_SDK_VER" ] && {
+		# REQUIRED TO GET THE ANDROID SDK
+		export ANDROID_SDK_VER="$(get_prop ro.build.version.sdk)"
+	}
+	return 0
+}
 
 # ASLIB RETURN CONFIRMATION
 # --------------------------------------------------------------------------------
