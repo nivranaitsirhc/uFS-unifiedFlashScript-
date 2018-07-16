@@ -9,4 +9,5 @@ WARNING:
 	Add a return 0 at the end of your script if your running commands outside of your functions.
 	if an error value is detected during sourcing your script will not be loaded.
 	
-	
+INST:
+	USE func._TEMPLATE.aslib for guide

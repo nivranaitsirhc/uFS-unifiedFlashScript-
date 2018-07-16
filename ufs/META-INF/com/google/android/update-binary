@@ -59,7 +59,7 @@ ui_print() {
 	#TMP_LOG="${TMP_LOG}"$'\n'"COLD_LOG $1"
 }
 
-cold_log() {
+ColdLog() {
 	echo "COLD_LOG $1" >> $TMP_LOG
 	#TMP_LOG="${TMP_LOG}"$'\n'"COLD_LOG $1"
 	printf "$1\n"
@@ -97,7 +97,7 @@ CLEAR_TMP_LOG() {
 	[ -e $TMP_LOG ] && rm -r $TMP_LOG
 }
 
-export cold_log=cold_log
+export ColdLog=ColdLog
 
 # Pre-Initialization
 # _______________________________________________________________________________________________________
@@ -134,8 +134,8 @@ ufsBIN="busybox zip lzmadec xzdec"
 eval bb="$BINARIES/busybox-$BINARCH"
 eval l="$BINARIES"
 
-cold_log "I: UPDATE-BINARY: BINARCH is $BINARCH"
-cold_log "I: UPDATE-BINARY: Busybox set to $bb"
+ColdLog "I: UPDATE-BINARY: BINARCH is $BINARCH"
+ColdLog "I: UPDATE-BINARY: Busybox set to $bb"
 # Post-Initialization
 # _______________________________________________________________________________________________________
 #
@@ -160,7 +160,7 @@ install -d "$BINARIES"
 # chmod binaries
 for bin in $ufsBIN; do
 	[ ! -e "$BINARIES/$bin-$BINARCH" ] && \
-	cold_log "E: UPDATE-BINARY: $bin-$BINARCH does not exist, maybe not supported yet by your arch." || {
+	ColdLog "E: UPDATE-BINARY: $bin-$BINARCH does not exist, maybe not supported yet by your arch." || {
 		chmod +x "$BINARIES/$bin-$BINARCH"
 		[[ "$bin" != "busybox" && -e "$BINARIES/$bin-$BINARCH" ]] && {
 		  ! ln -sf "$BINARIES/$bin-$BINARCH" "$BINARIES/$bin" && {

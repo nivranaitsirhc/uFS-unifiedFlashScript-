@@ -1,0 +1,48 @@
+#!/sbin/sh
+#
+#	aslib library
+#
+#	CodRLabworks
+#	CodRCA aslib Library Template v4
+#
+
+# LIBRARY DESCRIPTION
+# --------------------------------------------------------------------------------
+# I: THIS is a dummy description, defining the ASLIB LIBRARY FUNCTION Template
+#
+#
+
+# ----------------------------- ASLIB LIBRARY HEADER -----------------------------
+# ASLIB CLEAR
+# --------------------------------------------------------------------------------
+# I: Add The Paths of the files or directory that will be cleared by ASLIB_CLEAR separated by a double dot
+[ -z "$ASLIB_CLEAR" ] && {
+	# aslib clear is not defined by aslib loader may be obsolete or library is sourced directly
+	printf "I: Lib $AS_SCRIPT is sourced directly"
+}
+ASLIB_CLEAR "YOUR_PATH"
+# ---------------------------------- END HEADER ----------------------------------
+
+# INIT VARIABLES
+# --------------------------------------------------------------------------------
+# I: INIT your variables here. avoid exporting your variables here. add it in the
+#    aslib loader.
+
+
+# FUNCTIONS
+# --------------------------------------------------------------------------------
+# I: DEFINE your functions
+
+dummy_func(){
+	return 0
+}
+
+# INIT SCRIPT
+# --------------------------------------------------------------------------------
+# I: INITIALIZE your library
+
+
+# ASLIB RETURN CONFIRMATION
+# --------------------------------------------------------------------------------
+# 
+printf "SCRIPT LOADED $AS_SCRIPT\n"

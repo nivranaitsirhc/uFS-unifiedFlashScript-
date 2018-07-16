@@ -19,11 +19,11 @@ TMH5="TEST"
 #
 
 # placeholder functions
-install_init(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
+install_init(){ $ColdLog "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
-install_main(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
+install_main(){ $ColdLog "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
-install_post(){ $cold_log "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
+install_post(){ $ColdLog "I: INSTALLER.SH: install.sh was not loaded!"; return 0;}
 
 abort () { ui_print "$1";exit 1; }
 
@@ -33,14 +33,14 @@ ui_print(){
 	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 }
 
-cold_log() {
+ColdLog() {
 	echo "$(date "+%H:%M:%S") $1" >> $TMP_LOG
 	printf "$1\n"
 }
 
 flush_log(){
-	cold_log "I: INIT.SH: Flushing TMP_LOG"
-	cold_log "I: INIT.SH: Flushing DONE!!"
+	ColdLog "I: INIT.SH: Flushing TMP_LOG"
+	ColdLog "I: INIT.SH: Flushing DONE!!"
 	uFS_TL=/sdcard/logs/.devlogs/flush_$uFS_name.log
 	echo $'\n\n\n'"FLUSH LOG $(date)"$'\n' >> $uFS_TL
 	cat  "$TMP_LOG"                        >> $uFS_TL
@@ -61,7 +61,7 @@ INIT_TMP_LOG() {
 [ -z "$INIT_TMP_LOG" ] && [ "$INIT_TMP_LOG" != "true" ] && INIT_TMP_LOG;
 
 
-cold_log=cold_log
+ColdLog=ColdLog
 
 
 # INIT
@@ -69,7 +69,7 @@ cold_log=cold_log
 #
 
 # PRINT ESSENTIAL DEF
-$cold_log "D: INIT.SH: listing update-binary variables
+$ColdLog "D: INIT.SH: listing update-binary variables
 COREDIR   -> $COREDIR
 BINARIES  -> $BINARIES
 LIBS      -> $LIBS
@@ -104,8 +104,9 @@ ERR=0
 # ___________________________________________________________________________________________________________ <- 110 char
 #
 
+ASLIB_LIBDP=$LIBS
 ASLIB=$LIBS/aslib
-$cold_log "I: INIT.SH: LOADING $ASLIB"
+$ColdLog "I: INIT.SH: LOADING $ASLIB"
 command . $ASLIB || {
 	ui_print "E: ERROR $E_ANL: aslib is not loadable!!"
 	abort $E_ANL
@@ -116,7 +117,7 @@ CONFLIST="er_code ufsconfig"
 CONFGDIR="$COREDIR/config"
 for CF in $CONFLIST; do
 	command . $CONFGDIR/$CF && LM="LOADED" || LM="UNABLE TO LOAD"
-	$cold_log "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
+	$ColdLog "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
 done
 
 # LOAD USER CONFIGS
@@ -125,9 +126,9 @@ U_CONFGDIR="$COREDIR/install"
 ( unzip -o "$ZIP" "install/*" -d "$COREDIR" ) && {
 	for CF in $U_CONFLIST; do
 		command . $U_CONFGDIR/$CF && LM="LOADED" || LM="UNABLE TO LOAD"
-		$cold_log "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
+		$ColdLog "I: INIT.SH: LOADING $(printf "%-32s %s\n" "$CF" "$LM")"
 	done 
-} || cold_log "W: INIT.SH: UNABLE TO UNZIP USER CONFIGS"
+} || ColdLog "W: INIT.SH: UNABLE TO UNZIP USER CONFIGS"
 
 # SETUP ASLIB
 alLSet type 	$aslib_log_type        # FLASH TYPE
@@ -148,7 +149,7 @@ def_config_check || ui_print "W: Misconfigs Detetected! check logs"
 USER_INSTALLERSH=$COREDIR/install/installer.sh
 CORE_INSTALLERSH=$COREDIR/installer.sh
 [ -e $USER_INSTALLERSH ] && {
-	$cold_log "I: INIT.SH: DETECTED USER INSTALLER.SH, HANDING OVER.."
+	$ColdLog "I: INIT.SH: DETECTED USER INSTALLER.SH, HANDING OVER.."
 	(
 		. $USER_INSTALLERSH "$@"
 		flush_log
@@ -156,7 +157,7 @@ CORE_INSTALLERSH=$COREDIR/installer.sh
 	INSTL_ERR=$?
 	
 } || {
-	$cold_log "I: INIT.SH: EXEC $CORE_INSTALLERSH"
+	$ColdLog "I: INIT.SH: EXEC $CORE_INSTALLERSH"
 	(
 		. $CORE_INSTALLERSH "$@"
 		flush_log
@@ -166,7 +167,7 @@ CORE_INSTALLERSH=$COREDIR/installer.sh
 
 # HANDLE FLUSH_LOG ON ERROR
 [ "$INSTL_ERR" -ne "0" ] && {
-	$cold_log "E: INIT.SH: Error Executing installer.sh, Check /sdcard/logs/.devlogs"
+	$ColdLog "E: INIT.SH: Error Executing installer.sh, Check /sdcard/logs/.devlogs"
 	flush_log
 }
 
