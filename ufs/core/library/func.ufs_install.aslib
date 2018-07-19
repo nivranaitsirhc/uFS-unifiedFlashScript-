@@ -20,7 +20,7 @@
 	# aslib clear is not defined by aslib loader may be obsolete or library is sourced directly
 	printf "I: Lib $AS_SCRIPT is sourced directly"
 }
-ASLIB_CLEAR "YOUR_PATH"
+ASLIB_CLEAR "/sdcard/tmp/tmplib"
 # ---------------------------------- END HEADER ----------------------------------
 
 # INIT VARIABLES
@@ -234,9 +234,14 @@ asInstall() {
 		exit 1
 	}
 
-	# var. def.
-	ops_count=0;progress=0;
+	# ----- BEGIN INIT -----
+	#
+	
+	# Reset Progress Bar
 	progress 0 0;
+	
+	# variable Definitions 
+	local ops_count=0;local progress=0;
 
 	# prepare count for fancy progress
 	for dummy in $(find $SOURCESYS); do
@@ -244,17 +249,13 @@ asInstall() {
 	done
 	ops_arbiter=$(awk "BEGIN {printf \"%.5f\",1/$ops_count}")
 
-	#
-	# INSTALL APP LIB
-	#
-	
+	# read global setting for install overwrite
 	local al_ow=;
 	is_enabled aslib_asInstall_ow && al_ow=true || al_ow=false
 	
-	export TMPLIB=/sdcard/tmp/tmplib && [ ! -e "$TMPLIB" ] && mkdir -p "$TMPLIB"
-	
-	INSLIB=true
-	export RO_ABI=;export ABI=;export LIB=;export VENDORLIB=;
+	# initialize the system ABI
+	local INSLIB=true;
+	local RO_ABI=;local ABI=;local LIB=;local VENDORLIB=;
 	local ABILIST="$(get_prop ro.product.cpu.abilist)"
 	case $ABILIST in
 		*arm64-v8a*)
@@ -272,6 +273,10 @@ asInstall() {
 		$LT4 "D: ASLIB asInstall: detected ABI -> $ABI"
 		## < ----         END         ---- >
 	}
+	
+	#
+	# ----- END INIT -----
+	#
 	
 	# install files
 	for TARGET in $(find $SOURCESYS | sort); do
@@ -297,19 +302,22 @@ asInstall() {
 				INSTALL=false
 				TARGET_LIST="$(unzip -l $TARGET | grep lib/ | awk '{ print $4 }')"
 				(echo "$TARGET_LIST" | grep -q "lib/") && {
-					ABI="arm64-v8a";LIB="arm64";VENDORLIB="/system/vendor/lib64"
+					ABI="arm64-v8a"#;LIB="arm64";VENDORLIB="/system/vendor/lib64"
 					[ "$RO_ABI" == "arm64-v8a" ] && (echo "$TARGET_LIST" | grep -q "lib/$ABI") && {
-						install_app_lib && INSTALL=true; 
+						install_app_lib "$TARGET" "$ABI" "arm64" "/system/vendor/lib64" "$SYSTEMPATH" &&\
+						INSTALL=true; 
 					} || {
 						$LT4 "D: ASLIB asInstall: $TARGET has no arm64-v8a library. trying armeabi-v7a"
-						ABI="armeabi-v7a";LIB="arm";VENDORLIB="/system/vendor/lib"
+						ABI="armeabi-v7a";#LIB="arm";VENDORLIB="/system/vendor/lib"
 						(echo "$TARGET_LIST" | grep -q "lib/$ABI") && {
-							install_app_lib && INSTALL=true;
+							install_app_lib "$TARGET" "$ABI" "arm" "/system/vendor/lib" "$SYSTEMPATH" &&\
+							INSTALL=true; 
 						} || {
 							$LT4 "D: ASLIB asInstall: $TARGET has no armeabi-v7a library. trying armeabi"
 							ABI="armeabi";
 							(echo "$TARGET_LIST" | grep -q "lib/$ABI") && {
-								install_app_lib && INSTALL=true;
+								install_app_lib "$TARGET" "$ABI" "arm" "/system/vendor/lib" "$SYSTEMPATH" &&\
+								INSTALL=true; 
 							} || $LT4 "E: ASLIB asInstall: We did not detect $TARGETAPP's library files, strange..."
 						}
 					}
@@ -334,7 +342,7 @@ asInstall() {
 			
 			# INSTALL FILE
 			# lets ignore /system/app/app/lib only if there is an APK
-			if (! echo "$FILE" | grep -q "$TARGETAPP/lib") || [ ! -e "$SOURCESYS/$TARGETAPP/$(echo $FILE | cut -d/ -f 4-4).apk" ];then
+			if [[ "$FILE" == "${FILE/'$TARGETAPP/lib'/}" || ! -e "/system/$TARGETAPP/$(echo $FILE | cut -d/ -f 4-4).apk" ]];then
 				if [ -e "$FILE" ];then
 					$LT4 "W: ASLIB asInstall: $FILE already exist. "
 					# check if the file is the same if yes just ignore it
@@ -344,17 +352,17 @@ asInstall() {
 					} || {
 						[ "$al_ow" == "true" ] && {
 							$LT4 "D: ASLIB asInstall: OVERWRITE, overwrite enabled. overwriting $FILE"
-							install_file;
+							install_file "$TARGET" "$FILE";
 						} || $LT4 "W: ASLIB asInstall: IGNORING,  we are not allowed to overwrite the file."
 					} 
 				else
-					install_file
+					install_file "$TARGET" "$FILE";
 				fi
 			fi
 		fi
 	done
 	# generate the vendor_pub_list
-	install_app_lib_update_vendor_pub_lib_list
+	
 	progress 1 1
 	sleep 3
 }
@@ -370,7 +378,7 @@ asInstall() {
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init_ufs_install(){
 	return 0
 }
 

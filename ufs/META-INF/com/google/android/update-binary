@@ -146,13 +146,26 @@ if [ ! -f "/sbin/unzip" ]; then
 	exit 1
 fi
 
-if [ -e $COREDIR ];then
-	rm -rf $COREDIR
-fi
-# unzip core
-unzip -o "$ZIP" "core/*" -d "/tmp"
+# clean COREDIR remnants of past install
+[ -e "$COREDIR" ] && rm -rf "$COREDIR"
 
+# get the unzip list
+unzip -o "$ZIP" "core/unzip.list" -d "/tmp"
+
+[ -e "/tmp/core/unzip.list" ] && {
+	for L in `cat /tmp/core/unzip.list` "bin/busybox-$BINARCH";do
+		unzip -o "$ZIP" "core/$L" -d "/tmp"
+		[ ! -e "/tmp/$L" ] && ColdLog "E: UPDATE-BINARY: unable to extract $L"
+	done
+} || {
+	# default unzip core
+	unzip -o "$ZIP" "core/*" -d "/tmp"
+}
+
+# create the binaries directory
 install -d "$BINARIES"
+
+
 # Main
 # _______________________________________________________________________________________________________
 #

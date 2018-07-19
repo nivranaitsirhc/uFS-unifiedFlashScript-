@@ -112,9 +112,12 @@ set_system_fp() {
 	}
 	
 	# if bin xbin sbin
-	if [[ -f "$1" && -z "${1##*/bin*}" || -z "${1##*/xbin*}" || -z "${1##*/sbin*}" ]]; then
+	if   [[ -f "$1" && -z "${1##*/bin*}" || -z "${1##*/xbin*}" || -z "${1##*/sbin*}" ]]; then
 		set_perm 0 2000 0755 "$1" && \
 		chmod +x "$1"
+	elif [[ -f "$1" && -z "${1##*/vendor/lib*}" || -z "${1##*/vendor/lib64*}" ]]; then
+		[ "$ANDROID_SDK_VER" -ge "26" ] && local P="u:object_r:same_process_hal_file:s0" || P="u:object_r:vendor_file:s0"
+		set_perm 0 0 0644 "$P" "$1"
 	else
 		local p=;
 		[ -f "$1" ] && p=0644 || p=0755
@@ -135,7 +138,7 @@ set_system_fp() {
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init_recovery_tools_permissions(){
 	return 0
 }
 

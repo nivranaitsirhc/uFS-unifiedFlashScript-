@@ -53,7 +53,6 @@ link_files(){
 			if [ ! -e "$A" ];then
 				mkdir -p `dirname $A`
 				copy_file "$BL$A" "$A"
-				pub_lib_txt_list="$pub_lib_txt$(basename $A)"$'\n'
 				ln -sfn "$BL$A" "$B" &&\
 				LM="RESTORED & LINKED"
 			else 
@@ -63,7 +62,6 @@ link_files(){
 				} || {
 					# the file are not the same we need to install the file
 					copy_file "$BL$A" "$B"
-					pub_lib_txt_list="$pub_lib_txt$(basename $A)"$'\n'
 					[ -e "$B" ] && LM="INSTALLED        "
 				}
 			fi
@@ -72,36 +70,8 @@ link_files(){
 				$LT3 "E: ASLIB link_files: FAILED TO LINK $B"
 		}
 	done
-	#
-	install_app_lib_update_vendor_pub_lib_list
 }
 
-install_app_lib_update_vendor_pub_lib_list(){
-	# Android 8.0 requires to add all vendor library to /sysem/etc/public.libraries.txt
-	
-	# < quote >
-	# In addition to standard public native libraries,
-	# vendors may choose to provide additional native libraries accessible to apps 
-	# by putting them under the /vendor library folder (/vendor/lib for 32 bit libraries and,
-	# /vendor/lib64 for 64 bit) and listing them in: /vendor/etc/public.libraries.txt
-	# < end quote >
-	
-	local pub_lib_txt=/system/vendor/etc/public.libraries.txt;
-	[ ! -e "$pub_lib_txt" ] && {
-		# let create our own list
-		$LT4 "I: ASLIB install_app_lib_update_vendor_pub_lib_list: Generating public.libraries.txt"
-		printf "# ufs generated public.libraries.txt\n" > $pub_lib_txt
-		set_perm 0 0 0644 $pub_lib_txt
-	}
-	# clean pub_lib_txt_list
-	pub_lib_txt_list="$(echo $pub_lib_txt_list | sort -ur | sed '/^ *$/d')"
-	
-	# lets append the list
-	for L in $pub_lib_txt_list;do
-		$LT4 "I: ASLIB install_app_lib_update_vendor_pub_lib_list: adding $L public.libraries.txt"
-		printf "$L\n" >> $pub_lib_txt
-	done
-}
 
 # Backup Links
 backup_link(){
@@ -126,7 +96,6 @@ backup_link(){
 ui_print(){
 	echo -n -e "ui_print $1\n" >> /proc/self/fd/$OUTFD
 	echo -n -e "ui_print\n" >> /proc/self/fd/$OUTFD
-	
 	[ -n "$1" ] && file_log "$1"
 }
 

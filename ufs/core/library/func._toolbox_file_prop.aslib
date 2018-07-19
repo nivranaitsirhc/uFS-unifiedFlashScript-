@@ -28,6 +28,8 @@ ASLIB_CLEAR "YOUR_PATH"
 # I: INIT your variables here. avoid exporting your variables here. add it in the
 #    aslib loader.
 
+[ -z "$PROPFILES" ] && \
+export PROPFILES=;
 
 # FUNCTIONS
 # --------------------------------------------------------------------------------
@@ -94,13 +96,13 @@ set_file_prop() {
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init__toolbox_file_prop(){
+	# check if PROPFILES is define
+	[ -z "$PROPFILES" ] && \
+	PROPFILES="/system/default.prop /system/build.prop /data/local.prop /default.prop /build.prop"
 	return 0
 }
 
-# check if PROPFILES is defined
-[ -z "$PROPFILES" ] && \
-export PROPFILES="/system/default.prop /system/build.prop /data/local.prop /default.prop /build.prop"
 
 # ASLIB RETURN CONFIRMATION
 # --------------------------------------------------------------------------------

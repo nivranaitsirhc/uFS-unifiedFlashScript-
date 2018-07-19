@@ -57,7 +57,7 @@ abort(){
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init_recovery_tools_exit(){
 	return 0
 }
 

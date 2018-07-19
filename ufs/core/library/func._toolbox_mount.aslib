@@ -112,7 +112,7 @@ remount_mountpoint() {
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init__toolbox_mount(){
 	return 0
 }
 

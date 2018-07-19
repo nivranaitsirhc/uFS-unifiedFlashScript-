@@ -21,7 +21,7 @@
 	# aslib clear is not defined by aslib loader may be obsolete or library is sourced directly
 	printf "I: Lib $AS_SCRIPT is sourced directly"
 }
-ASLIB_CLEAR "YOUR_PATH"
+ASLIB_CLEAR "/sdcard/tmp/tmplib"
 # ---------------------------------- END HEADER ----------------------------------
 
 # INIT VARIABLES
@@ -29,8 +29,11 @@ ASLIB_CLEAR "YOUR_PATH"
 # I: INIT your variables here. avoid exporting your variables here. add it in the
 #    aslib loader.
 
-export pub_lib_txt_list=;
+# Define TMPLIB
+export TMPLIB=/sdcard/tmp/tmplib
 
+export pub_lib_txt_list=;
+export ANDROID_SDK_VER=;
 
 # FUNCTIONS
 # --------------------------------------------------------------------------------
@@ -95,7 +98,31 @@ extract_zip() {
 ###### ASLIB.SUB.INSTALL_APP_LIB
 install_app_lib(){
 	# asInstall Sub
-	$LT4 "D: ASLIB install_app_lib: Processing AppLib using $ABI, $LIB, $VENDORLIB"
+	$LT4 "D: ASLIB install_app_lib: Processing AppLib using TARGET-$1, ABI-$2, LIB-$3,VENDORLIB-$4, SYSTEMPATH-$5"
+		
+	# ----- BEGIN INIT -----
+	
+	local TARGET="$1";local ABI="$2";local LIB="$3";local VENDORLIB="$4";local SYSTEMPATH="$5"
+	
+	# check tmplib definition
+	[ -z "$TMPLIB" ] && {
+		TMPLIB=/sdcard/tmp/tmplib
+	}
+	
+	# check tmplib for installation
+	[[ -e "$TMPLIB" && "$(ls -A $TMPLIB 2>/dev/null)" ]] && {
+		$LT4 "D: ASLIB asInstall: TMPLIB is not empty, clearing..."
+		rm -rf "$TMPLIB/*"
+	}
+	
+	# recreate directory
+	[ ! -e "$TMPLIB" ] && {
+		mkdir_p "$TMPLIB"
+	}
+	
+	# -----  END  INIT  -----
+	
+
 	(unzip -o "$TARGET" "lib/$ABI/*" -d "$TMPLIB") && {
 		for SO in $(ls $TMPLIB/lib/$ABI); do
 			local TMP_SO="$TMPLIB/lib/$ABI/$SO";local VEN_SO="$VENDORLIB/$SO";local APP_SO="$SYSTEMPATH/lib/$LIB/$SO"
@@ -105,7 +132,7 @@ install_app_lib(){
 					install_LnkFile "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
 				} || {
 					$LT4 "D: ASLIB install_app_lib: Installing in APP DIR, A different SO already exist in $VENDORLIB - $SO"
-					install_app_lib_sys "$TMP_SO" "$APP_SO"
+					install_file "$TMP_SO" "$APP_SO"
 				}
 			else
 				$LT4 "D: ASLIB install_app_lib: Installing in $VENDORLIB - $SO"
@@ -114,9 +141,10 @@ install_app_lib(){
 				install_LnkFile "$SYSTEMPATH/lib/$LIB/" "$SYSTEMPATH" "$VEN_SO" "$APP_SO"
 			fi
 		done
-		# Clean TMPLIB
-		rm -rf $TMPLIB/*
 	} || $LT3 "E: ASLIB install_app_lib: Error in extracting lib from $TARGET"
+	
+	# Clean TMPLIB
+	rm -rf "$TMPLIB/lib"
 }
 
 
@@ -151,16 +179,18 @@ install_app_lib_update_vendor_pub_lib_list(){
 ###### ASLIB.INSTALL_FILE
 install_file(){
 	# asInstall sub
-	cp -dp "$TARGET" "$FILE" || dd if="$TARGET" of="$FILE"
-	[ ! -e "$FILE" ] && { $LT3 "E: ASLIB install_file: Failed to install $FILE"; } || {
-		file_list "${FILE#/system/}"
-		set_system_fp "$FILE";
+	local D=`dirname $2`;
+	[ ! -e "$D" ] && mkdir_p "$D"
+	cp -dp "$1" "$2" || dd if="$1" of="$2"
+	[ ! -e "$2" ] && { $LT3 "E: ASLIB install_file: Failed to install $2"; } || {
+		file_list "${2#/system/}"
+		set_system_fp "$2";
 	}
 }
 
 ###### ASLIB.LINK_FILE
 install_LnkFile() {
-	mkdir_p "$1"
+	[ ! -e "$1" ] && mkdir_p "$1"
 	ln -sfn "$3" "$4" &&\
 	$LT4 "D: ASLIB install_LnkFile: LINKED FROM ${3#/system/} TO ${4#/system/}" ||\
 	$LT3 "E: ASLIB install_LnkFile: FAILED TO LINK"
@@ -185,7 +215,7 @@ install_app_lib_sys(){
 		P="u:object_r:vendor_file:s0"
 	}
 	
-	mkdir_p "$D"
+	[ ! -e "$D" ] && mkdir_p "$D"
 	[ -e "$2" ] && {
 		$LT4 "W: ASLIB install_app_lib_sys: DELETING.. $B already exist in $D."
 		rm -f "$2"
@@ -193,7 +223,9 @@ install_app_lib_sys(){
 	[[ ! -e "$2" || ! -f "$2" ]] && {
 		$LT4 "I: ASLIB install_app_lib_sys: installing $2"
 		{ cp "$1" "$2" || dd if="$1" of="$2" ;} && \
-		{ set_perm 0 0  "$2"; file_list "${2#/system/}";pub_lib_txt_list="$pub_lib_txt$(basename $1)"$'\n';} || \
+		{	set_perm 0 0 0644 "$P" "$2";# file_list "${2#/system/}";
+			#pub_lib_txt_list="$pub_lib_txt$(basename $1)"$'\n';
+		} || \
 		$LT3 "E: ASLIB install_app_lib_sys: unable to copy $1"
 	}
 	return 0
@@ -213,8 +245,11 @@ install_app_lib_sys(){
 init_ufs_install_sub(){
 	# get android SDK version
 	[ -z "$ANDROID_SDK_VER" ] && {
+		# MOUNT SYSTEM
+		is_mounted /system rw || remount_mountpoint /system rw 
 		# REQUIRED TO GET THE ANDROID SDK
-		export ANDROID_SDK_VER="$(get_prop ro.build.version.sdk)"
+		ANDROID_SDK_VER="$(get_prop ro.build.version.sdk)"
+		is_mounted /system rw && umount /system
 	}
 	return 0
 }

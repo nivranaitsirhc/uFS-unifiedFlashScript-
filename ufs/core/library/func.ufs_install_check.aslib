@@ -110,6 +110,7 @@ pre_check() {
 
 	[ "$(ls -A $SOURCESYS 2>/dev/null)" ] && {
 		$LT2 "I: ASLIB pre_check: cleaning SOURCEFS"
+		[ -e "$SOURCESYS" ] && \
 		rm -rf $SOURCESYS/*
 	}
 	init_pre_check=1
@@ -260,7 +261,7 @@ def_config_check() {
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init_ufs_install_check(){
 	return 0
 }
 

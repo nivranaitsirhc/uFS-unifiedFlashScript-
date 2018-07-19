@@ -79,14 +79,15 @@ mkdir_p(){
 	
 	# Set Permission & Exit if Directory Already Exist
 	[[ -e "$D" && -d "$D" ]] && {
-		set_perm "$u.$g" "$m" "$D" || {
+		set_perm "$u" "$g" "$m" "$D" || {
 			chown "$u.$g" "$D" && chmod "$m" "$D"
 		}
 	} || {
+		local TD="$D"
 		# check only non existing directory
-		while [ ! -d "$D" ];do
-			LIST="$D"$'\n'"$LIST"
-			D=`dirname $D`
+		while [ ! -d "$TD" ];do
+			LIST="$TD"$'\n'"$LIST"
+			TD=`dirname $TD`
 		done
 		
 		# create directory
@@ -176,7 +177,7 @@ copy_fsp(){
 # func.DUMMY_LIBRARY.aslib ->	init_DUMMY_LIBRARY(){}
 #
 
-init_DUMMY_LIBRARY(){
+init__toolbox(){
 	return 0
 }
 
