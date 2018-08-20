@@ -11,7 +11,7 @@
 # ! the core/installer.sh.                               !
 # !                                                      !
 # ! Note.                                                !
-# ! 1.) core/installer.sh will only load                 !
+# ! 1.) core/init.sh will only load                 !
 # !     * default core configs                           !
 # !     * user defined configs                           !
 # !     * and libraries                                  !
@@ -20,6 +20,6 @@
 # ! 2.) all binaries and arguments passed from,          !
 # !     update-binary will also be passed to this scrpt. !
 # ! 3.) Automated Functions Defined inside the core      !
-# !     installer.sh will be disabled, as this script    !
-# !     is called before those functions are executed.   !
+# !     installer.sh will be disabled, as that script    !
+# !     will not be loaded by init.sh                    !
 # !------------------------------------------------------!

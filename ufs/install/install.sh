@@ -7,9 +7,8 @@
 #
 
 #	! Note This code is sourced at installer.sh init          !
-#   ! Please be careful in scripting outside the functions    !
-#   ! it will probably break the script.                      !
-
+#	! Please be careful in scripting outside the functions    !
+#	! it will probably break the script.                      !
 ##############################################################
 # INIT                                                       #
 ##############################################################
