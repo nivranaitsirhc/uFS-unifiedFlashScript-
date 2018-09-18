@@ -55,7 +55,7 @@ set_perm() {
 	else
 		D="$5";u="$1";g="$2";m="$3";P="$4"
 	fi
-	$LT3 "I: ASLIB set_perm: setting permission $u - $g $m $P $D"
+	$LT4 "I: ASLIB set_perm: setting permission $u - $g $m $P $D"
 	chown "$u.$g" "$D"	||\
 	chown "$u:$g" "$D"	
 	chmod "$m" "$D"		
