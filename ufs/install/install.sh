@@ -6,9 +6,19 @@
 #	CodRCA : Christian Arvin
 #
 
-#	! Note This code is sourced at installer.sh init          !
+#	! Note This code is sourced by init.sh and used by        !
+#   ! installer.sh at runtime.                                !
 #	! Please be careful in scripting outside the functions    !
 #	! it will probably break the script.                      !
+
+##############################################################
+# VARIABLE DEF_INIT                                                       #
+##############################################################
+# Define your variables here.
+# It's good practice to start your variables with double
+# __ (underscore) to prevent conflict with local variables.
+__SAMPLE_VARIABLE=0;
+
 ##############################################################
 # INIT                                                       #
 ##############################################################
@@ -40,9 +50,20 @@ install_main() {
 ###############################################################
 # POST SCRIPTS                                                #
 ###############################################################
-# This function is called after the intaller.sh has run with 
+# This function is called after the installer.sh has run with 
 # its own sub shell.
 install_post() {
 	# ! DO NOT REMOVE THE RETURN CODE !
 	return 0
+}
+
+##############################################################
+# YOUR FUNCTIONS                                             #
+##############################################################
+# Define your functions here.
+# It's good practice that your functions will start with a
+# character then followed by an _ (underscore) to prevent
+# conflict with local defined functions.
+A_SAMPLE_FUNCTION(){
+	return 0;
 }

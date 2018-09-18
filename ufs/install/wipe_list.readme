@@ -1,0 +1,17 @@
+# WIPE LIST FORMAT
+# ----------------------------------------------------------
+# All files inside the install folder starting with wipe*
+# and with an extension of *.list will be loaded when
+# the function creat_wipelist() is called.
+# Sample...
+# valid   format -> wipe_app.list, wipe_files.list, wipe_[any_name].list
+# invalid format -> wipeapp.list, wipe_fileslist.. etc.
+
+# WIPE LIST ENTRY FORMAT
+# ----------------------------------------------------------
+# Add here the files/folder you want to be removed from the system.
+# Warning: if the path is detected as a folder it will delete the entire folder.
+# format is (/system/) the/path/you/want/to/be/removed.
+# Sample...
+# path    -> /system/app/dummy
+# will be -> app/dummy

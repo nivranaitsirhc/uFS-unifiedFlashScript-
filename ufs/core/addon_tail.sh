@@ -51,11 +51,14 @@ link_files(){
 			mkdir -p `dirname $B`
 			# compare backup to present file
 			if [ ! -e "$A" ];then
-				# copy so to lib and link to apk
-				mkdir -p `dirname $A`
-				copy_file "$BL$A" "$A"
-				ln -sf "$A" "$B" &&\
-				LM="RESTORED & LINKED"
+				# check backup if exist
+				[ -e "$BL$A" ] && {
+					# copy so to lib and link to apk
+					mkdir -p `dirname $A`
+					copy_file "$BL$A" "$A"
+					ln -sf "$A" "$B" &&\
+					LM="RESTORED & LINKED"
+				}
 			else 
 				(cmp "$A" "$BL$A") && {
 					# the so are the same no need to restore, just link
@@ -87,9 +90,9 @@ extract_so_from_apk(){
 		# test so extraction
 		[ -f "$1" ] && \
 		$LT3 "I: ASLIB extract_so_from_apk: SO recovered from $apk" || \
-		$LT3 "E: ASLIB extract_so_from_apk: failed to extract so from APK, failing install.."
+		$LT3 "E: ASLIB extract_so_from_apk: failed to extract SO from APK, failing install.."
 	else
-		$LT3 "E: ASLIB extract_so_from_apk: Missing APK, ultimately failing so install.."
+		$LT3 "E: ASLIB extract_so_from_apk: Missing APK, ultimately failing SO install.."
 	fi
 }
 

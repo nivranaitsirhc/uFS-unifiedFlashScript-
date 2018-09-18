@@ -53,13 +53,13 @@ mountpoints="system sdcard"
 # ------------------------------------------------------------------------ #
 
 # Name of Script
-uFS_name="user_test"
+uFS_name="user_config_default"
 
 # Version of Script
-uFS_src_ver="u_test_1"
+uFS_src_ver="user_config_please_change_me"
 
 # Revision of Script
-uFS_rev_ver="u_test_2"
+uFS_rev_ver="user_config_please_change_me"
 
 # ADDON CONFIG
 # ------------------------------------------------------------------------ #
