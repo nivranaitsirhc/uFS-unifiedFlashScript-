@@ -46,11 +46,11 @@ toolbox_mount() {
 	
 	if [ -e "/etc/fstab" ];then
 		for i in `cat /etc/fstab | grep -m 1 "$1"`; do
-			if [ -z "$POINT" ]; then POINT=$i;elif [ -z "$DEV" ]; then DEV=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+			if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
 		done
 		
-		$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW $POINT $DEV"
-		! mount -t $FS -o $RW $POINT $DEV && \
+		$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW $DEV $POINT"
+		! mount -t $FS -o $RW $DEV $POINT && \
 		$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW,remount $DEV" && \
 		! mount -t $FS -o $RW,remount $DEV || return 0
 	else
@@ -63,21 +63,21 @@ toolbox_mount() {
 	
 	if [ -e "/etc/recovery.fstab" ];then
 		for i in `cat /etc/recovery.fstab | grep -m 1 "$1"`; do
-			if [ -z "$POINT" ]; then POINT=$i;elif [ -z "$DEV" ]; then DEV=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+			if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
 		done
 		
 		if [ "$FS" = "emmc" ]; then
-			$LT4 "D: ASLIB toolbox_mount: exec mount -t ext4 -o $RW $POINT $DEV"
-			! mount -t ext4 -o $RW $POINT $DEV  && \
+			$LT4 "D: ASLIB toolbox_mount: exec mount -t ext4 -o $RW $DEV $POINT"
+			! mount -t ext4 -o $RW $DEV $POINT  && \
 			$LT4 "D: ASLIB toolbox_mount: exec mount -t ext4 -o $RW,remount $DEV" && \
 			! mount -t ext4 -o $RW,remount $DEV && \
-			$LT4 "D: ASLIB toolbox_mount: exec mount -t f2fs -o $RW $POINT $DEV" && \
-			! mount -t f2fs -o $RW $POINT $DEV  && \
+			$LT4 "D: ASLIB toolbox_mount: exec mount -t f2fs -o $RW $DEV $POINT" && \
+			! mount -t f2fs -o $RW $DEV $POINT  && \
 			$LT4 "D: ASLIB toolbox_mount: exec mount -t f2fs -o $RW,remount $DEV" && \
 			! mount -t f2fs -o $RW,remount $DEV || return 0
 		else
-			$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW $POINT $DEV"
-			! mount -t $FS -o $RW $POINT $DEV   && \
+			$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW $DEV $POINT"
+			! mount -t $FS -o $RW $DEV $POINT   && \
 			$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW,remount" && \
 			! mount -t $FS -o $RW,remount $DEV  || return 0
 		fi
