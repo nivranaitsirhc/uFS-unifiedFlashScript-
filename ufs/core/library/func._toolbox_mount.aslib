@@ -45,8 +45,20 @@ toolbox_mount() {
 	local DEV=;local POINT=;local FS=;
 	
 	if [ -e "/etc/fstab" ];then
-		for i in `cat /etc/fstab | grep -m 1 "$1"`; do
-			if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+		for i in `cat /etc/fstab | grep -m1 "$1"`; do
+			#if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+			[[ -n "$DEV" && -n "$POINT" && -n "$FS" ]] && break;
+			[ -z "$DEV" ] && {
+				echo "$i" | grep "/dev/block" >/dev/null 2>&1 && DEV="$i";
+			} || {
+				[ -z "$FS" ] && {
+					echo "$i" | grep -wo "auto\|vfat\|ext4\|ext3\|ext2\|f2fs\|fat32\|fat\|fuse" >/dev/null 2>&1&& FS="$i";
+				} || {
+					[ -z "$POINT" ] && {
+					echo "$i" | grep -w "$1" >/dev/null 2>&1&& POINT="$i";
+					}
+				}
+			}
 		done
 		
 		$LT4 "D: ASLIB toolbox_mount: exec mount -t $FS -o $RW $DEV $POINT"
@@ -62,8 +74,20 @@ toolbox_mount() {
 	DEV=;POINT=;FS=;
 	
 	if [ -e "/etc/recovery.fstab" ];then
-		for i in `cat /etc/recovery.fstab | grep -m 1 "$1"`; do
-			if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+		for i in `cat /etc/recovery.fstab | grep -m1 "$1"`; do
+			#if [ -z "$DEV" ]; then DEV=$i;elif [ -z "$POINT" ]; then POINT=$i;elif [ -z "$FS" ]; then FS=$i;break;fi
+			[[ -n "$DEV" && -n "$POINT" && -n "$FS" ]] && break;
+			[ -z "$DEV" ] && {
+				echo "$i" | grep "/dev/block" >/dev/null 2>&1&& DEV="$i";
+			} || {
+				[ -z "$FS" ] && {
+					echo "$i" | grep -wo "auto\|vfat\|ext4\|ext3\|ext2\|f2fs\|fat32\|fat\|fuse\|emmc" >/dev/null 2>&1 && FS="$i";
+				} || {
+					[ -z "$POINT" ] && {
+						echo "$i" | grep -w "$1" >/dev/null 2>&1 && POINT="$i";
+					}
+				}
+			}
 		done
 		
 		if [ "$FS" = "emmc" ]; then
@@ -98,7 +122,7 @@ remount_mountpoint() {
 		$LT4 "D: ASLIB remount_mountpoint: exec mount -o $2,remount $1 $1" && \
 		! mount -o $2,remount $1 $1 && \
 		$LT4 "D: ASLIB remount_mountpoint: exec toolbox_mount $1" && \
-		! toolbox_mount $1 && \
+		! toolbox_mount $1 $2 && \
 		{
 			$LT3 "I: ASLIB remount_mountpoint: $1 failed to remount"
 			return 1
