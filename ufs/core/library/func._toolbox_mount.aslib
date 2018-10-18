@@ -52,10 +52,10 @@ toolbox_mount() {
 				echo "$i" | grep "/dev/block" >/dev/null 2>&1 && DEV="$i";
 			} || {
 				[ -z "$FS" ] && {
-					echo "$i" | grep -wo "auto\|vfat\|ext4\|ext3\|ext2\|f2fs\|fat32\|fat\|fuse" >/dev/null 2>&1&& FS="$i";
+					echo "$i" | grep -woE "auto|ext4|ext3|ext2|f2fs|fat|fat32|vfat|ntfs|fuse" >/dev/null 2>&1 && FS="$i";
 				} || {
 					[ -z "$POINT" ] && {
-					echo "$i" | grep -w "$1" >/dev/null 2>&1&& POINT="$i";
+					echo "$i" | grep -wE "/$1|$1" >/dev/null 2>&1 && POINT="$i";
 					}
 				}
 			}
@@ -81,10 +81,10 @@ toolbox_mount() {
 				echo "$i" | grep "/dev/block" >/dev/null 2>&1&& DEV="$i";
 			} || {
 				[ -z "$FS" ] && {
-					echo "$i" | grep -wo "auto\|vfat\|ext4\|ext3\|ext2\|f2fs\|fat32\|fat\|fuse\|emmc" >/dev/null 2>&1 && FS="$i";
+					echo "$i" | grep -woE "auto|ext4|ext3|ext2|f2fs|fat|fat32|vfat|ntfs|fuse|emmc" >/dev/null 2>&1 && FS="$i";
 				} || {
 					[ -z "$POINT" ] && {
-						echo "$i" | grep -w "$1" >/dev/null 2>&1 && POINT="$i";
+						echo "$i" | grep -wE "/$1|$1" >/dev/null 2>&1 && POINT="$i";
 					}
 				}
 			}
