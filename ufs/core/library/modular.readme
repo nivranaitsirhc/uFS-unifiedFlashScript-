@@ -2,7 +2,7 @@ ASLIB HAS GONE MODULAR!
 
 ABSTARCT:
 	aslib will still be sourced by init.sh
-	aslib will source all files inside core/library/ with a file name template func."functioname".aslib
+	aslib will source all files inside core/library/ with a file name template func."functionname".aslib
 	all variables must be defined in aslib and exported.
 	check logs /logs/ufs for debugging.
 WARNING:
